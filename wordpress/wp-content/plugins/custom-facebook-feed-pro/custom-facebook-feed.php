@@ -1,161 +1,163 @@
-<?php 
+<?php
 /*
 Plugin Name: Custom Facebook Feed Pro Personal
 Plugin URI: https://smashballoon.com/custom-facebook-feed
 Description: Add a completely customizable Facebook feed to your WordPress site
-Version: 3.7.2
+Version: 4.2.2
 Author: Smash Balloon
-Author URI: http://smashballoon.com/
+Author URI: https://smashballoon.com/
 */
 /*
-Copyright 2019  Smash Balloon  (email: hey@smashballoon.com)
+Copyright 2022 Smash Balloon (email: hey@smashballoon.com)
 This program is paid software; you may not redistribute it under any
 circumstances without the expressed written consent of the plugin author.
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 */
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-if ( function_exists('display_cff') ){
-    wp_die( "Please deactivate the free version of the Custom Facebook Feed plugin before activating this version.<br /><br />Back to the WordPress <a href='".get_admin_url(null, 'plugins.php')."'>Plugins page</a>." );
-} else {
-    include dirname( __FILE__ ) .'/cff-init.php';
-}
-define( 'CFFVER', '3.7.2' );
-define( 'CFFWELCOME_VER', '3.7' );
-define( 'WPW_SL_STORE_URL', 'http://smashballoon.com/' );
+define( 'CFFVER', '4.2.2' );
+define( 'CFFWELCOME_VER', '3.17' );
+define( 'WPW_SL_STORE_URL', 'https://smashballoon.com/' );
 define( 'WPW_SL_ITEM_NAME', 'Custom Facebook Feed WordPress Plugin Personal' ); //*!*Update Plugin Name at top of file*!*
+
 // The ID of the product. Used for renewals
 $cff_download_id = 210; //210, 299, 300, 13384
 
-if( !class_exists( 'EDD_SL_Plugin_Updater' ) ) {
-    // load our custom updater if it doesn't already exist
-    include( dirname( __FILE__ ) . '/plugin_updater.php' );
+// Plugin Folder Path.
+if ( ! defined( 'CFF_PLUGIN_DIR' ) ) {
+	define( 'CFF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 }
-function cff_plugin_updates() {
-    // retrieve our license key from the DB
-    $cff_license_key = trim( get_option( 'cff_license_key' ) );
-    // setup the updater
-    $edd_updater = new EDD_SL_Plugin_Updater( WPW_SL_STORE_URL, __FILE__, array( 
-            'version'   => CFFVER,           // current version number
-            'license'   => $cff_license_key,        // license key (used get_option above to retrieve from DB)
-            'item_name' => WPW_SL_ITEM_NAME,    // name of this plugin
-            'author'    => 'Smash Balloon'      // author of this plugin
-        )
-    );
+
+// Plugin Folder URL.
+if ( ! defined( 'CFF_PLUGIN_URL' ) ) {
+	define( 'CFF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 }
-add_action( 'admin_init', 'cff_plugin_updates', 0 );
 
-//Run function on plugin activate
-function cff_pro_activate() {
-    $options = get_option('cff_style_settings');
+if ( ! defined( 'CFF_DBVERSION' ) ) {
+	define( 'CFF_DBVERSION', '2.4' );
+}
 
-    //If the post types are all set to false then set them to be true as this likely means there was an issue with the settings not saving on activation
-    if( $options[ 'cff_show_links_type' ] !== true && $options[ 'cff_show_event_type' ] !== true && $options[ 'cff_show_video_type' ] !== true && $options[ 'cff_show_photos_type' ] !== true && $options[ 'cff_show_status_type' ] !== true && $options[ 'cff_show_albums_type' ] !== true ){
-        $options[ 'cff_show_links_type' ] = true;
-        $options[ 'cff_show_event_type' ] = true;
-        $options[ 'cff_show_video_type' ] = true;
-        $options[ 'cff_show_photos_type' ] = true;
-        $options[ 'cff_show_status_type' ] = true;
-        $options[ 'cff_show_albums_type' ] = true;
+if ( ! defined( 'CFF_UPLOADS_NAME' ) ) {
+	define( 'CFF_UPLOADS_NAME', 'sb-facebook-feed-images' );
+}
+
+// Name of the database table that contains instagram posts
+if ( ! defined( 'CFF_POSTS_TABLE' ) ) {
+	define( 'CFF_POSTS_TABLE', 'cff_posts' );
+}
+
+// Name of the database table that contains feed ids and the ids of posts
+if ( ! defined( 'CFF_FEEDS_POSTS_TABLE' ) ) {
+	define( 'CFF_FEEDS_POSTS_TABLE', 'cff_feeds_posts' );
+}
+
+if ( ! defined( 'CFF_MAX_RECORDS' ) ) {
+	define( 'CFF_MAX_RECORDS', 200 );
+}
+
+if ( ! defined( 'CFF_MINIMUM_WALL_VERSION' ) ) {
+	define( 'CFF_MINIMUM_WALL_VERSION', '1.0.3' );
+}
+
+// Plugin File.
+if ( ! defined( 'CFF_FILE' ) ) {
+    define( 'CFF_FILE',  __FILE__ );
+}
+
+if ( ! defined( 'CFF_FILE' ) ) {
+	define( 'CFF_PLUGIN_BASE', plugin_basename( CFF_FILE ) );
+}
+
+if ( ! defined( 'CFF_FEED_LOCATOR' ) ) {
+    define( 'CFF_FEED_LOCATOR', 'cff_facebook_feed_locator' );
+}
+if ( ! defined( 'CFF_BUILDER_DIR' ) ) {
+    define( 'CFF_BUILDER_DIR', CFF_PLUGIN_DIR . 'admin/builder/' );
+}
+
+if ( ! defined( 'CFF_BUILDER_URL' ) ) {
+    define( 'CFF_BUILDER_URL', CFF_PLUGIN_URL . 'admin/builder/' );
+}
+
+if ( ! defined( 'CFF_VIEWS_DIR' ) ) {
+    define( 'CFF_VIEWS_DIR', CFF_PLUGIN_DIR . 'admin/views/' );
+}
+
+if ( ! defined( 'CFF_VIEWS_URL' ) ) {
+    define( 'CFF_VIEWS_URL', CFF_PLUGIN_URL . 'admin/views/' );
+}
+
+//update_option( 'cff_db_version', 2.2 );
+
+/**
+ * Check PHP version
+ *
+ * Check for minimum PHP 5.6 version
+ *
+ * @since 3.18
+*/
+if ( version_compare( phpversion(), '5.6', '<' ) ) {
+    if( !function_exists( 'cff_check_php_notice' ) ){
+        include CFF_PLUGIN_DIR . 'admin/enqueu-script.php';
+        function cff_check_php_notice(){
+            $include_revert = ( version_compare( phpversion(), '5.6', '<' ) &&  version_compare( phpversion(), '5.3', '>' ) );
+
+            $revert_url = ''; $plugin_name = strtolower(WPW_SL_ITEM_NAME);
+            if (strpos($plugin_name , 'personal') !== false)  $revert_url = 'https://smashballoon.com/wp-content/uploads/revert/CFF-3.17.1-Personal.zip';
+            if (strpos($plugin_name , 'business') !== false)  $revert_url = 'https://smashballoon.com/wp-content/uploads/revert/CFF-3.17.1-Business.zip';
+            if (strpos($plugin_name , 'developer') !== false)  $revert_url = 'https://smashballoon.com/wp-content/uploads/revert/CFF-3.17.1-Developer.zip';
+            if (strpos($plugin_name , 'smash') !== false)  $revert_url = 'https://smashballoon.com/wp-content/uploads/revert/CFF-3.17.1-Smash.zip';
+            ?>
+                <div class="notice notice-error">
+                    <div>
+                        <p><strong><?php echo esc_html__('Important:','custom-facebook-feed') ?> </strong><?php echo esc_html__('Your website is using an outdated version of PHP. The Custom Facebook Feed plugin requires PHP version 5.6 or higher and so has been temporarily deactivated.','custom-facebook-feed') ?></p>
+
+                        <p>
+                            <?php
+                            echo esc_html__('To continue using the plugin','custom-facebook-feed') . ', ';
+
+                            if($include_revert):
+                                echo esc_html__('either use the button below to revert back to the previous version','custom-facebook-feed') . ', ';
+                            else:
+                                echo sprintf( __('you can either manually reinstall the previous version of the plugin (%s) ','custom-facebook-feed' ), '<a href="'.$revert_url.'">'. __( 'download', 'custom-facebook-feed' ).'</a>' );
+                            endif;
+
+                            echo esc_html__('or contact your host to request that they upgrade your PHP version to 5.6 or higher.','custom-facebook-feed');
+                            ?>
+                        </p>
+
+                        <?php
+                            if($include_revert):
+                        ?>
+                            <p><button data-plugin="<?php echo $revert_url ?>" data-type="plugin" class="cff-notice-admin-btn status-download button button-primary"><?php echo esc_html__('Revert Back to Previous Version','custom-facebook-feed') ?></button></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php
+        }
     }
-
-    //Show all parts of the feed by default on activation if they're all unset
-    if( $options[ 'cff_show_author' ] !== true && $options[ 'cff_show_text' ] !== true && $options[ 'cff_show_desc' ] !== true && $options[ 'cff_show_shared_links' ] !== true && $options[ 'cff_show_date' ] !== true && $options[ 'cff_show_media' ] !== true && $options[ 'cff_show_event_title' ] !== true && $options[ 'cff_show_event_details' ] !== true && $options[ 'cff_show_meta' ] !== true && $options[ 'cff_show_link' ] !== true && $options[ 'cff_show_facebook_link' ] !== true && $options[ 'cff_show_facebook_share' ] !== true && $options[ 'cff_event_title_link' ] !== true ){
-        $options[ 'cff_show_author' ] = true;
-        $options[ 'cff_show_text' ] = true;
-        $options[ 'cff_show_desc' ] = true;
-        $options[ 'cff_show_shared_links' ] = true;
-        $options[ 'cff_show_date' ] = true;
-        $options[ 'cff_show_media' ] = true;
-        $options[ 'cff_show_event_title' ] = true;
-        $options[ 'cff_show_event_details' ] = true;
-        $options[ 'cff_show_meta' ] = true;
-        $options[ 'cff_show_link' ] = true;
-        $options[ 'cff_show_facebook_link' ] = true;
-        $options[ 'cff_show_facebook_share' ] = true;
-        $options[ 'cff_event_title_link' ] = true;
-        $options[ 'cff_show_like_box' ] = true;
-    }
-    
-    //Save the settings
-    update_option( 'cff_style_settings', $options );
-
-    //Set transient for welcome page
-    set_transient( '_cff_activation_redirect', true, 30 );
-
-    //Run cron twice daily when plugin is first activated for new users
-    wp_schedule_event(time(), 'twicedaily', 'cff_cron_job');
+    add_action( 'admin_notices', 'cff_check_php_notice' );
+    return; //Stop until PHP version is fixed
 }
-register_activation_hook( __FILE__, 'cff_pro_activate' );
 
-function cff_pro_deactivate() {
-    wp_clear_scheduled_hook('cff_cron_job');
-}
-register_deactivation_hook(__FILE__, 'cff_pro_deactivate');
-
-
-//Uninstall
-function cff_pro_uninstall()
-{
-    if ( ! current_user_can( 'activate_plugins' ) )
+if ( function_exists('cff_main') || function_exists('display_cff') ){
+    if ( isset( $_POST['oth'] ) ) {
         return;
+    } else {
+	    wp_die( "Please deactivate the free version of the Custom Facebook Feed plugin before activating this version.<br /><br />Back to the WordPress <a href='".get_admin_url(null, 'plugins.php')."'>Plugins page</a>." );
 
-    //Delete avatar transients after uninstalling
-    global $wpdb;
-    $table_name = $wpdb->prefix . "options";
-    $wpdb->query( "
-        DELETE
-        FROM $table_name
-        WHERE `option_name` LIKE ('%\_transient\_fb\_avatar\_%')
-        " );
-    $wpdb->query( "
-        DELETE
-        FROM $table_name
-        WHERE `option_name` LIKE ('%\_transient\_timeout\_fb\_avatar\_%')
-        " );
+    }
 
-    //If the user is preserving the settings then don't delete them
-    $cff_preserve_settings = get_option('cff_preserve_settings');
-    if($cff_preserve_settings) return;
-
-    //Settings
-    delete_option( 'cff_show_access_token' );
-    delete_option( 'cff_access_token' );
-    delete_option( 'cff_page_id' );
-    delete_option( 'cff_page_type' );
-    delete_option( 'cff_num_show' );
-    delete_option( 'cff_post_limit' );
-    delete_option( 'cff_show_others' );
-    delete_option( 'cff_cache_time' );
-    delete_option( 'cff_cache_time_unit' );
-    delete_option( 'cff_locale' );
-    delete_option( 'cff_ajax' );
-    delete_option( 'cff_preserve_settings' );
-    delete_option('cff_extensions_status');
-    delete_option('cff_welcome_seen');
-
-    //Style & Layout
-    delete_option( 'cff_title_length' );
-    delete_option( 'cff_body_length' );
-    delete_option( 'cff_style_settings' );
-
-    //Deactivate and delete license
-    // retrieve the license from the database
-    $license = trim( get_option( 'cff_license_key' ) );
-    // data to send in our API request
-    $api_params = array( 
-        'edd_action'=> 'deactivate_license', 
-        'license'   => $license, 
-        'item_name' => urlencode( WPW_SL_ITEM_NAME ) // the name of our product in EDD
-    );
-    // Call the custom API.
-    $response = wp_remote_get( add_query_arg( $api_params, WPW_SL_STORE_URL ), array( 'timeout' => 15, 'sslverify' => false ) );
-    delete_option( 'cff_license_status' );
-    delete_option( 'cff_license_key' );
+} else {
+    include dirname( __FILE__ ) .'/cff-init.php';
 }
-register_uninstall_hook( __FILE__, 'cff_pro_uninstall' );
 
-?>
+include CFF_PLUGIN_DIR . 'inc/Custom_Facebook_Feed_Pro.php';
+
+function cff_main_pro() {
+	return CustomFacebookFeed\Custom_Facebook_Feed_Pro::instance();
+}
+cff_main_pro();

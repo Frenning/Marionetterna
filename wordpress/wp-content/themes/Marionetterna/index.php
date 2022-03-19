@@ -13,23 +13,10 @@
 
 get_header(); ?>	 
 <div id="primary" class="content-area col-sm-12 col-md-9">
-        <div class="content-inside col-md-12">
-                <?php if ( have_posts() ) : ?>
-                        <?php /* Start the Loop */ ?>
-                        <?php while ( have_posts() ) : the_post(); ?>
-                                <?php
-                                        /* Include the Post-Format-specific template for the content.
-                                        * If you want to override this in a child theme, then include a file
-                                        * called content-___.php (where ___ is the Post Format name) and that will be used instead.
-                                        */
-                                        get_template_part( 'content', get_post_format() );
-                                ?>
-                        <?php endwhile; ?>
-                        <!-- <?php dazzling_paging_nav(); ?> -->
-                <?php else : ?>
-                        <?php get_template_part( 'content', 'none' ); ?>
-                <?php endif; ?>               
-        </div><!--content-inside-->
+	<div class="content-inside col-md-12">
+		<h1><?php the_title();?></h1>
+		<p><?php echo (the_content());?></p>
+	</div><!--content-inside-->
 </div><!-- #primary -->
 <?php get_sidebar(); ?>
 <?php get_footer(); ?>

@@ -1,42 +1,111 @@
 <?php
 
-class cwLink {
+class cwLink
+{
 
-	public static function addAdminLink($options) {
+    /*
+         Values for cwDomain and userDomain are retrived from the cwCore.php in php-classes     
+    */
+	
 
-		$params = $options['params'];
-		$flags  = $options['flags' ];
+    public static function addAdminLink($options)
+    {
+		  
+        $params = $options['params'];
+        $flags = $options['flags'];
+        $flagsexists = is_array($flags);
+        $paramsUrl = $params['url'];
 
-		if (empty($params['url']) || empty($params['text'])) {
-			return '';
-		}
+        // return if no url parameter
+        if (empty($paramsUrl)) {
+            return '';
+        }
 
-		$topUrl = 'https://minaaktiviteter.se/';
-		$url = $topUrl.$params['url'];
+        // change topdomain to cwDomain option if parameter exists
+         $topUrl = 'https://' . cwCore::userDomain() . '/';
 
-		$classes = array();
-		if (in_array('inline', $flags)) {
-			$classes[] = 'cwLinkInline';
-		} else {
-			$classes[] = 'cwSmallIconLeft';
-			$classes[] = 'cwIconService';
-		}
+        // Replace /index.php with / in the url 
+        $pathUrl = str_replace('/index.php', '/', $paramsUrl);
 
-		// WP always stores text with html-chars so we most not use htmlspecialchars() here
-		$html = '<a href="'.$url.'"';
-		if (count($classes) > 0) {
-			$html.= 'class="'.implode(' ', $classes).'"';
-		}
-		$html.= '>';
-		$html.= $params['text'];
-		$html.= '</a>';
+        $url = $topUrl . $pathUrl;
+		
+        //Add organisation code to link if value exists
+        $userDomain = cwCore::userOrgCode();
+        if (! empty($userDomain)) {
+           //Check if url already have query string 
+            if (strpos($url, '?')) {
+                $url .= "&org=" .  $userDomain;
+            }            
+            else {
+                $url .= "?org=" .  $userDomain;
+            }
+        }		
 
-		if (in_array('p', $flags)) {
-			$html = "\n<p>".$html."</p>\n";
-		}
+        // Default text is the url
+        $textContent = $url;
 
-		return $html;
-	}
+        // Set text to text parameter if parameter exists
+        if (! empty($params['text'])) {
+            $textContent = $params['text'];
+        }
 
+        $classes = array();
+
+        // Set classes if classes parameter is specified
+        if (! empty($params['classes'])) {
+            $classes[] = $params['classes'];
+        } 
+        // Else set inline class if flag exist
+        elseif ($flagsexists && in_array('inline', $flags)) {
+            $classes[] = 'cwLinkInline';
+        } 
+        
+        // Default set classes that in css create iconlink
+        else {
+            $classes[] = 'cwSmallIconLeft';
+            $classes[] = 'cwIconService';
+        }
+
+        // WP always stores text with html-chars so we most not use htmlspecialchars() here
+        $html = '<a href="' . $url . '" ';
+        if (count($classes) > 0) {
+            $html .= 'class="' . implode(' ', $classes) . '" ';
+        }
+
+        // Set link title
+        if (! empty($params['info'])) {
+            $html .= 'title="' . $params['info'] . '" ';
+        }
+
+        // pages that require login should have nofollow for search bots
+        if ($flagsexists && in_array('logedin', $flags)) {
+            $html .= 'rel="nofollow" ';
+        }
+
+        // Open links in new windwow
+        $html .= 'target="_blank">';
+
+        // Set textcontent and then addd closing tag.
+        $html .= $textContent;
+        $html .= '</a>';
+
+        // Add login required text after link
+        if ($flagsexists && in_array('logedin', $flags)) {
+
+            $html .= " (inloggning krävs)";
+        }
+
+        // Add contanaing elements if flags exist
+        if ($flagsexists && in_array('p', $flags)) {
+            $html = "<p>" . $html . "</p>";
+        }
+
+        if ($flagsexists && in_array('div', $flags)) {
+            $html = "<div>" . $html . "</div>";
+        }
+
+        return $html;
+    }
 }
+
 ?>

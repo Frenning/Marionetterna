@@ -1,78 +1,93 @@
 <?php
 
-class cwShortCodeProcessor {
+class cwShortCodeProcessor
+{
+   private static function transformShortcodeOptions($attributes, $content, $tag)
+   
+    {
+        $options = array(
+            'tag' => mb_strtolower(trim((string) $tag)),
+            'params' => array(),
+            'flags' => array(),
+            'debug' => false
+        );
 
-	private static function transformShortcodeOptions($attributes, $content, $tag) {
+        if ((is_array($attributes) && count($attributes) > 0)) {
 
-		$options = array('tag'=>mb_strtolower(trim((string) $tag)), 'params'=>array(), 'flags'=>array(), 'debug'=>false);
+            foreach ($attributes as $attributeName => $attributeValue) {
 
-// 		if (!is_array($attributes) && count($attributes) > 0) {
-// 			return $options;
-// 		}
+                $key = mb_strtolower(trim((string) $attributeName));
+                $val = trim((string) $attributeValue);
 
-		foreach ($attributes as $attributeName => $attributeValue) {
+                // If no value is assign to an attribute it will show up in $attributes with a numeric index
+                if (is_numeric($key)) {
 
-			$key = mb_strtolower(trim((string) $attributeName));
-			$val = trim((string) $attributeValue);
+                    if (mb_strtolower($val) == 'debug') {
+                        $options['debug'] = true;
+                        continue;
+                    }
 
-			// If no value is assign to an attribute it will show up in $attributes with a numeric index
-			if (is_numeric($key)) {
+                    if (! in_array($key, $options['flags'])) {
+                        $options['flags'][] = $val;
+                    }
+                    continue;
+                }
 
-				if (mb_strtolower($val) == 'debug') {
-					$options['debug'] = true;
-					continue;
-				}
+                $options['params'][$key] = $val;
+            }
+            
+            return $options;            
+        } 
+        
+        else {
+            
+            return $options;
+        }
+    }
 
-				if (!in_array($key, $options['flags'])) {
-					$options['flags'][] = $val;
-				}
-				continue;
-			}
+    public static function process($attributes, $content, $tag)
+    {
+        $options = self::transformShortcodeOptions($attributes, $content, $tag);
 
-			$options['params'][$key] = $val;
-		}
+        // Note that $options['tag'] is always lowercase
+        switch ($options['tag']) {
 
-		return $options;
-	}
+            case 'cw':
+            case 'cwshop': // For backward compability only
+                require_once (CW_PHP_CLASSES_DIR . 'cwShortcode.php');
+                $shortcode = new cwShortcode($attributes, $content, $tag);
+                $html = $shortcode->getHtmlContent();
+                break;
 
-	public static function process($attributes, $content, $tag) {
+            case 'cwlink':
+                require_once (CW_PHP_CLASSES_DIR . 'cwLink.php');
+                $html = cwLink::addAdminLink($options);
+                break;
 
-		$options = self::transformShortcodeOptions($attributes, $content, $tag);
+            case 'cwchildpages':
+            case 'cwtoc': // For backward compability only
+                require_once (CW_PHP_CLASSES_DIR . 'cwToc.php');
+                $html = cwToc::childPagesList($options);
+                break;
 
-		// Note that $options['tag'] is always lowercase
-		switch ($options['tag']) {
+            case 'cwservice':
+                require_once (CW_PHP_CLASSES_DIR . 'cwService.php');
+                $html = cwService::addServiceInfo($options);
+                break;
 
-			case 'cw' :
-			case 'cwshop' : // For backward compability only
-				require_once(CW_PHP_CLASSES_DIR.'cwShortcode.php');
-				$shortcode = new cwShortcode($attributes, $content, $tag);
-				$html = $shortcode->getHtmlContent();
-				break;
+            default:
+                $html = '';
+        }
 
-			case 'cwlink' :
-				require_once(CW_PHP_CLASSES_DIR.'cwLink.php');
-				$html = cwLink::addAdminLink($options);
-				break;
+        if (! empty($options['debug'])) {
 
-			case 'cwchildpages' :
-			case 'cwtoc' : // For backward compability only
-				require_once(CW_PHP_CLASSES_DIR.'cwToc.php');
-				$html = cwToc::childPagesList();
-				break;
+            $html .= "\n" . '<pre>$attributes = ' . print_r($attributes, true) . '</pre>';
+            $html .= "\n" . '<pre>$content = ' . print_r($content, true) . '</pre>';
+            $html .= "\n" . '<pre>$tag = ' . print_r($tag, true) . '</pre>';
+            $html .= "\n" . '<pre>$options = ' . print_r($options, true) . '</pre>';
+        }
 
-			default : $html = '';
-		}
-
-		if (!empty($options['debug'])) {
-
-			$html.= "\n".'<pre>$attributes = '.print_r($attributes, true).'</pre>';
-			$html.= "\n".'<pre>$content = '.print_r($content, true).'</pre>';
-			$html.= "\n".'<pre>$tag = '.print_r($tag, true).'</pre>';
-			$html.= "\n".'<pre>$options = '.print_r($options, true).'</pre>';
-		}
-
-		return $html;
-	}
-
+        return $html;
+    }
 }
 ?>

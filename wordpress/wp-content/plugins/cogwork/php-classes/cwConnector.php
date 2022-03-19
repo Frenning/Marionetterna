@@ -107,24 +107,27 @@ class cwConnector {
 			}
 		}
 
+	
 		if (isset($dataArr['javascriptFilesBefore']) && is_array($dataArr['javascriptFilesBefore'])) {
 			foreach ($dataArr['javascriptFilesBefore'] as $fileData) {
 				if (empty($fileData['url'])) { continue; }
 				$html.= "\n".'<script type="text/javascript" src="'.htmlspecialchars($fileData['url']).'"></script>';
 			}
 		}
+	
 
 		if (!empty($dataArr['htmlBlock'])) {
 			$html.= "\n".$dataArr['htmlBlock'];
 		}
+
 
 		if (isset($dataArr['javascriptFilesAfter']) && is_array($dataArr['javascriptFilesAfter'])) {
 			foreach ($dataArr['javascriptFilesAfter'] as $fileData) {
 				if (empty($fileData['url'])) { continue; }
 				$html.= "\n".'<script type="text/javascript" src="'.htmlspecialchars($fileData['url']).'"></script>';
 			}
-		}
-
+		}	 
+		
 		return $html;
 	}
 
@@ -151,6 +154,7 @@ class cwConnector {
 			case 'test'  : $hostUrl.= 'test.minaaktiviteter.se/'; break;
 			case 'local' : $hostUrl.= 'localhost/cw/public_html/'; break;
 			case 'dans'  : $hostUrl.= 'dans.se/'; break;
+			case 'idrott'  : $hostUrl.= 'idrott.se/'; break;
 			default      : $hostUrl.= 'minaaktiviteter.se/'; break;
 		}
 

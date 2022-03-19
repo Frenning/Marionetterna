@@ -1,9 +1,9 @@
 === Custom Facebook Feed Pro ===
 Author: Smash Balloon
-Support Website: http://smashballoon.com/custom-facebook-feed/
-Requires at least: 3.0
-Tested up to: 5.1
-Version: 3.7.2
+Support Website: https://smashballoon.com/custom-facebook-feed/
+Requires at least: 4.1
+Tested up to: 5.9
+Version: 4.2.2
 License: Non-distributable, Not for resale
 
 The Custom Facebook Feed allows you to display a completely customizable Facebook feed of any public Facebook page on your website.
@@ -34,6 +34,442 @@ Display a **completely customizable**, **responsive** and **search engine crawla
 5. You can display multiple feeds of different Facebook pages by specifying a Page ID directly in the shortcode: [custom-facebook-feed id=smashballoon num=5].
 
 == Changelog ==
+= 4.2.2 =
+* Fix: Fixed an issue which caused the new "Feed Templates" menu item to throw an error if editing a feed created prior to v4.2.
+
+= 4.2.1 =
+* Fix: Fixed an error in the plugin updater code which occurs in certain circumstances.
+
+= 4.2 =
+* New: Introducing our new Feed Templates feature! You can now select a feed template when creating a feed to make it much quicker and easier to get started with the type of feed you want to display. Selecting a template preconfigures the feed customization settings to match that template, saving you time and effort.
+* Tweak: Allowed the use of the "includewords" shortcode setting in the Social Wall plugin to work like the shortcode setting "filter".
+* Tweak: Added a button to reset the error log found on the settings page.
+* Tweak: When using the lightbox, users will not be able to switch posts while new image thumbnails are loading.
+* Tweak: All HTTP calls now use WordPress HTTP request features instead of native PHP cURL.
+* Fix: For legacy feeds, the shortcode setting "account" was not working.
+* Fix: oEmbeds would not work for some new versions of Facebook video links.
+* Fix: Fixed several issues with loading more posts and events feeds.
+* Fix: "Load More" button customizations were not being reflected in the customizer feed preview.
+* Fix: Fixed an issue in the customizer preview when changing post types using the Safari browser.
+* Fix: Fixed PHP warnings that would occur during background updates.
+* Fix: Fixed high numbers of events preventing "upcoming" events from working as expected.
+* Fix: Fixed some occurrences of CDN images being used when local images were available.
+* Fix: Fixed an issue with group events.
+* Fix: Added back support for the "<k></k>" date formatting feature.
+* Fix: Fixed groups not working correctly in Social Wall under some circumstances.
+* Fix: Fixed thumbnail AJAX request not working under some circumstances.
+* Fix: Fixed an issue with the dark theme and the cff-item elements not having a dark background.
+* Fix: Post tags would link the wrong word in post text under some circumstances.
+* Fix: Settings that were available in versions before 4.0 were missing for album and video feeds.
+* Fix: Fixed the lightbox showing all posts on the page when multiple single album feeds were displaying.
+* Fix: Fixed PHP warning "explode() expects parameter 1 to be string, array given" related to an account ID error.
+* Fix: Fixed a PHP error "trying to get array offset of bool" causing feeds to not load.
+* Fix: Fixed distorted portrait image album covers when loading more posts.
+* Fix: Fixed a JavaScript error that would occur when trying to play a video that did not have a parent post.
+
+= 4.1.1 =
+* Fix: Fixed an issue where legacy feeds would cause an oAuth error during the API request.
+* Fix: Fixed an issue causing thumbnails not to appear in the lightbox when available.
+* Fix: Post comments would not display in some feeds.
+* Fix: Local copies of images would not be created in some feeds.
+* Fix: Improved plugin hardening by removing unused admin pages.
+
+= 4.1.0.1 =
+* Fix: Fixed an issue with images not showing in photo/video feeds when using the Masonry layout.
+* Fix: Fixed an issue causing Facebook posts not to display in the Social Wall plugin since v4.1.
+
+= 4.1 =
+* Tweak: Connecting an account will now go through connect.smashballoon.com to improve account connection reliability.
+* Tweak: The Facebook app used to connect groups has changed. If you are using a Facebook group feed, then please reconnect your group accounts using the new app when convenient to prevent any future issues. When reconnecting, follow the included directions on how to add the new app to your group settings.
+* Tweak: All Facebook data is now encrypted in your WordPress database.
+* Tweak: Access Tokens are no longer able to be viewed on the settings page.
+* Tweak: Translations specific to feeds now allow the use of a "blank" setting to always use the translation made on the "Settings" page.
+* Fix: Manually connecting an account while on the "Settings" page would not work.
+* Fix: Fixed a JavaScript error that would occur with certain optimization plugins in use.
+* Fix: Dark color scheme was not applying correctly to "boxed" posts.
+* Fix: "Show outside scrollable area" setting was not working for the header and like box with certain feed settings.
+* Fix: Load more button was showing when no more posts were available.
+* Fix: Events feed number of posts setting would not work if the load more button was disabled.
+* Fix: Improvements made to the order of albums in the lightbox when multiple albums were on a page.
+* Fix: Video descriptions sometimes contained incorrect characters.
+* Fix: The Multifeed extension was not working as expected with events feeds.
+* Fix: An invalid color would be used in inline styles under certain circumstances.
+* Fix: Fixed a PHP error when a string was used for the cache time setting.
+
+= 4.0.8 =
+* Fix: Fixed a PHP error when a Gutenberg block was used to display a feed that didn't exist.
+* Fix: Fixed a PHP warning due to a non-number being used as the cache time.
+* Fix: Additional slashes were added to the feed name every time settings were saved if using an apostrophe.
+* Fix: Added additional plugin hardening.
+
+= 4.0.7 =
+* Important: With this update, the Custom CSS and Custom JS settings have been deprecated. Please see below for details.
+* Tweak: If any Custom CSS was being used in this field then it will be automatically moved into the native WordPress Customizer "Additional CSS" field instead and continue to work as normal.
+* Tweak: If any Custom JavaScript was being used, then this update will prevent that JavaScript from working. There are [directions here](https://smashballoon.com/doc/moving-custom-javascript-code-out-of-our-plugins/) on how you can migrate this JavaScript into a specialized plugin instead.
+
+= 4.0.6 =
+* Fix: Fixed a compatibility issue with the Complianz Cookie Consent plugin integration.
+* Fix: Locations of feeds sorted by source would not work if the source ID was not a number.
+* Fix: Fixed an issue where setting were not preserved even when using the preserve settings option and deleting the plugin.
+* Fix: Added support for "eventoffset" setting in shortcode.
+* Fix: Improved security hardening
+* Fix: Fixed locale setting causing a PHP warning if not set.
+* Fix: Fixed PHP warnings when viewing dashboard notifications.
+* Fix: Fixed some options and tables not being removed from the WordPress database on uninstall.
+* Fix: Added a workaround for a rare issue with posts from other accounts displaying in feeds meant to show only posts from the account author.
+* Fix: Fixed styling issues for the notice to renew your license that appears when a license expires.
+
+= 4.0.5 =
+* Fix: Fixed a bug that was inadvertently adding a notice to the WordPress dashboard.
+
+= 4.0.4 =
+* Tweak: The Optimize Images setting is now automatically enabled when using the GDPR consent feature to allow it to work as intended.
+* Tweak: The mobile columns setting will now be applied when the screen width is 480px or less, instead of 400px.
+* Tweak: Added support for the "cachetime" shortcode setting which can be used if you need to change the caching method to check for new content when the page loads instead of in the background. This can be used to set the number of minutes to wait until the next check is performed. This is not recommended for most users.
+* Fix: Added a setting back into the feed customizer to change the Like Box position to be at the top or bottom of the feed.
+* Fix: Fixed an issue where under some circumstances no posts would show when filtering a feed even if posts matched the filter.
+* Fix: Adding a Custom Facebook Feed block without using the "embed" button in the CFF customizer would not work if more than 1 feed was created.
+* Fix: Fixed a compatibility issue with the Complianz Cookie Consent plugin integration.
+* Fix: Fixed a compatibility issue with the Web Toffee GDPR Cookie Consent plugin integration.
+* Fix: Switching from a Single Featured Post feed to another feed type when inside the customizer would sometimes result in no posts displaying.
+* Fix: Fixed a problem with the carousel layout when using themes that add paragraph elements automatically.
+* Fix: When connecting a new group source, the link to the selected Facebook group in the directions for admins to grant permission to Smash Balloon's app was incorrect.
+* Fix: Removed the limit applied to the number of Facebook sources that can be shown at one time when connecting a Facebook account.
+
+= 4.0.3 =
+* Fix: Error messages were not appearing at the top of the settings page when there was a critical error with a feed.
+* Fix: Videos would not play in the feed when the lightbox was disabled.
+* Fix: Legacy feeds were not updating when changes were made to the feed source and the multifeed extension was being used.
+* Fix: "posttags" shortcode setting was not working.
+* Fix: Some carousel settings were not being reflected in the feed preview when customizing a feed.
+* Fix: Media was not loading correctly when using the GDPR setting.
+* Fix: The license field would disappear when an unexpected value was saved for the license data.
+* Fix: Sources were not showing that there was an error when an account specific Facebook error was occurring.
+
+= 4.0.2 =
+* Fix: Cache would not clear before posts were updated in the posts cache.
+* Fix: Feeds would always use 4 columns for desktop size screens when using the "grid" layout.
+* Fix: Some legacy feeds had an invalid locale set as the default locale which would cause no posts to display in the customizer.
+* Fix: Adding a feed using the Elementor module would cause the lightbox to appear at the bottom of the page for some themes.
+* Fix: Fixed an issue with unintended sources being added and removed when editing sources using the customizer and the [Multifeed extension](https://smashballoon.com/extensions/multifeed).
+
+= 4.0.1 =
+* Fix: Fixed an error that would occur when creating new database tables for certain MySQL versions/engines.
+* Fix: Some lightbox features would not work with certain combinations of feed settings such as videos playing and multiple images displaying.
+* Fix: When updating from version 3.x, some settings for the number of posts would cause the feed customizer not to load when editing legacy feeds.
+* Fix: Event details would not display in an event feed even if event details were included in the settings for a feed.
+* Fix: Only the first account's posts would display in a multifeed created with the new feed builder.
+* Fix: Setting the number of columns for mobile devices to "1" would not work correctly if the tablet columns was set to something other than "3".
+* Fix: Group feeds created using version 4.0 would display an error and no posts if there was not also a related connected account from version 3.x.
+* Fix: Re-added support for the `padding` shortcode option as it was removed from the settings page.
+* Fix: Saving certain snippets of custom JavaScript or CSS was causing the custom code to break.
+* Fix: Event date format setting was not applying the correct date format to feeds and had the wrong choices for formats in the customizer.
+* Fix: Added a message to let users know if all sources were removed and using the feed customizer.
+* Fix: Fixed post layouts for events always showing full width in the customizer.
+* Fix: Making changes to the source of legacy feeds would cause the wrong access token to be used to collect new posts.
+
+= 4.0 =
+* Important: Minimum supported WordPress version has been raised from 3.0 to 4.1.
+* New: Our biggest update ever! We've completely redesigned the plugin settings from head to toe to make it easier to create, manage, and customize your Facebook feeds.
+* New: All your feeds are now displayed in one place on the "All Feeds" page. This shows a list of any existing (legacy) feeds and any new ones that you create. Note: If you updated from a version prior to v3.19 then you may need to view your feeds on your webpage so that the plugin can locate them and list them here.
+* New: Easily edit individual feed settings for new feeds instead of cumbersome shortcode options.
+* New: It's now much easier to create feeds. Just click "Add New", select your feed type, connect your account, and you're done!
+* New: Brand new feed customizer. We've completely redesigned feed customization from the ground up, reorganizing the settings to make them easier to find.
+* New: Live Feed Preview. You can now see changes you make to your feeds in real time, right in the settings page. Easily preview them on desktop, tablet, and mobile sizes.
+* New: Improved integrations with [our extensions](https://smashballoon.com/custom-facebook-feed/extensions/). You can now easily create advanced feed types and utilize our extensions to add even more advanced features.
+* New: Elementor and WordPress widgets. We've added new Elementor and WordPress widgets to make it easier to embed your feeds.
+* New: Added a Masonry layout option for all feed types, so you can now display your Photo, Album, and Video feeds in a flexible masonry layout.
+* New: Color Scheme option. It's now easier than ever to change colors across your feed without needing to adjust individual color settings. Just set a color scheme to effortlessly change colors across your entire feed.
+* New: You can now change the number of columns in your feed across desktop, tablet, and mobile.
+* New: Easily import and export feed settings to make it simple to move feeds across sites.
+
+= 3.19.5 =
+* Tweak: Improved caching of resized images for groups to ensure posts in the persistent cache can display images successfully once image URLs expire.
+* Tweak: The plugin now uses SVGs for icons instead of Font Awesome to prevent loading of the Font Awesome file.
+* Fix: Fixed a bug related to connected accounts in the [Social Wall Plugin](https://smashballoon.com/social-wall/).
+* Fix: Fixed an issue where avatars were not displaying for all group members who had authorized our plugin.
+* Fix: Added support for the new LiteSpeed API to ensure the cache is successfully cleared with the latest version of the LiteSpeed plugin.
+* Fix: Fixed an issue related to the GDPR Cookie Consent plugin by WebToffee where script blocking was causing an issue after consent was granted by the user.
+* Fix: Added support for updated cookie consent names in the GDPR Cookie Consent plugin.
+* Fix: Fixed a bug with Vimeo video URLs caused by Facebook API changes.
+* Fix: Fixed an issue with message tags not properly displaying.
+* Fix: Improved Access Token escaping.
+* Fix: Fixed an issue that could cause the wrong photos to be displayed in the lightbox when switching between albums.
+* Fix: Fixed a layout issue in the [Album extension](https://smashballoon.com/extensions/album/) when the Feed Columns setting was set to be more than 1.
+
+= 3.19.4 =
+* Fix: Fixed a bug with group videos not displaying for some feeds.
+* Fix: Fixed an issue with past events in group feeds due to a Facebook API change which removed the time_filter field.
+
+= 3.19.3 =
+* New: In this update, the plugin will now use a persistent cache to store your Facebook group posts. This will help minimize any affects of a Facebook API change on May 25th which will only allow Facebook Groups to retrieve content from the past 90 days. The plugin will store your group posts in the persistent cache so that those posts can continue to be displayed beyond 90 days. This update will also make a one-time request to get the last 100 posts from your group and store those too, so that the affect of this change will be minimal for our users. Please [see here](https://smashballoon.com/doc/facebook-api-change-limits-groups-to-90-days/) for more information.
+* Tweak: The date format selected is now also applied to the comment date.
+* Tweak: Updated jQuery methods in preparation for jQuery migrate removal in an upcoming WordPress core update.
+* Tweak: Added option to enqueue CSS and JS files only when shortcode is on the page.
+* Tweak: Added an reset error log button to the settings page.
+* Tweak: Added an option to hide the call-to-action button in the post content.
+* Fix: Changed how access tokens are retrieved to prevent conflict with the "Rank Math SEO" plugin when connecting an account.
+* Fix: Fixed an error in the Feed Finder tool when removing accounts.
+* Fix: Fixed an issue with duplicated records in the feed finder.
+* Fix: Fixed "Unknown error" response with API story tag calls.
+* Fix: Fixed miscellaneous feed display and notices issues.
+
+= 3.19.2 =
+* Fix: Fixes an issue with masonry being inadvertently applied to the grid layout.
+* Fix: Fixes a layout issue when the number of columns were set to 5 in a timeline feed.
+* Fix: Added a fix for apostrophes in connected accounts.
+* Fix: Fixed an issue with filtering Facebook posts using our [Social Wall](https://smashballoon.com/social-wall/) add-on.
+* Fix: Fixed an issue with the lightbox in an album feed due to a JavaScript error caused by a GDPR plugin integration issue.
+
+= 3.19.1 =
+* Fix: Fixes an issue with masonry being inadvertently applied to the grid layout.
+* Fix: Fixed an issue with the feed source being missing in the Feed Finder summary if set in a shortcode option.
+* Fix: Added feed locations to the System Info to make finding a feed easier for the support team.
+* Fix: Fixed an occassional PHP notice related to the new error reporting system.
+* Fix: Fixed a PHP warning related to the "array_diff()" function which would sometimes occur when loading more posts in grid feeds.
+
+= 3.19 =
+* New: The locations of the Facebook feeds on your site will now be logged and listed on a single page for easier management. After this feature has been active for awhile, a "Feed Finder" link will appear under your connected accounts on the plugin Settings page which allows you to see a list of all feeds on your site along with their locations.
+* New: Improved the error reporting system to make resolving issues easier.
+* Tweak: Due to an API bug which Facebook hasn't resolved yet that affects buy/sell posts in groups, we have added a 'salesposts' shortcode option which will work around the issue until they fix it. If you are displaying posts from a group and receiving an "API Error 100" notice then adding salesposts=true to your shortcode and clearing the plugin cache should resolve the issue.
+* Tweak: Added an ISO 8601 standard date format option for post dates and event dates.
+* Fix: Fixed an issue with the caption not always being updated successfuly in the lightbox when using the Album extension.
+* Fix: Resolved an issue with the Reviews extension not being compatible with the latest update when filtering reviews.
+* Fix: Fixed an image with certain symbols within the alt text of an image breaking images in some themes.
+* Fix: The lightbox would sometimes display empty white space above the caption.
+* Fix: Fixed an issue with the path to the events placeholder image - which is used if an event doesn't have an image - not being correct.
+* Fix: The 'before date' and 'after date' text was not being displayed in all circumstances.
+* Fix: Fixed a layout issue with the posts and Like Box which occurred when using a multi-column layout and applying feed padding.
+* Fix: Disabling the "View on Facebook" link would also hide the "Share" link.
+* Fix: Fixed a JavaScript error in the lightbox which would sometimes occur when viewing an album.
+* Fix: When the avatar for a post couldn't be displayed a broken image icon was being shown over the placeholder.
+
+= 3.18.2 =
+* Fix: Fixed a number of issues related to the Facebook Like Box widget not displaying, being the incorrect height, or causing a layout issue with multi-column feeds.
+* Fix: The "Reset Resized Images" button not working successfully.
+* Fix: Fixed a PHP error which would occur due to the "cff_get_utc_offset" function being undefined.
+
+= 3.18.1 =
+* Fix: Fixed an error that was occurring if the advanced "Request Method" setting was set to explicitly be "WP HTTP".
+* Fix: Fixed an issue with the JavaScript file not loading from the correct location if the "Are you using an Ajax powered theme" setting was enabled.
+
+= 3.18 =
+* New: The plugin code has been completely refactored to improve performance and maintainability, and to make it easier to add new features. If you experience any issues with this update then please open a support ticket [here](https://smashballoon.com/custom-facebook-feed/support/) so that we can address it right away. Thank you!
+* Tweak: Improved the caching system for post comments and reactions data so that it's faster and more reliable.
+* Note: The minimum supported PHP version has been increased to PHP version 5.6. If you are using a lower version then a notice will be displayed with a button to revert back to the previous version.
+
+= 3.17.1 =
+* Fix: Fixed an issue with YouTube and Vimeo embeds due to a Facebook API change which was causing them to display as links instead of videos.
+* Fix: Fixed an issue with the integration with the Complianz plugin.
+
+= 3.17 =
+* New: Integrations with popular GDPR cookie consent solutions added. See the GDPR setting in the following location for more information: Facebook Feed > Customize > Misc > GDPR.
+* Tweak: Added Litespeed Cache to page cache plugins that will clear when Facebook Feed retrieves new posts.
+* Tweak: For album feeds, lightbox navigation will be disabled until all photos in the album are done loading.
+
+= 3.16.1 =
+* Tweak: Minor frontend CSS improvements.
+* Tweak: Added support for improved notices on the plugin settings page.
+* Fix: Added image resizing information to the plugin System Info to help with debugging issues.
+
+= 3.16 =
+* New: Added support for Facebook oEmbeds. When you share a link to a Facebook post or video, WordPress automatically converts it into an embedded Facebook post for you (an "oEmbed"). However, on October 24, 2020, WordPress is discontinuing support for Facebook oEmbeds and so any existing or new embeds will no longer work. Don't worry though, we have your back! This update adds support for Facebook oEmbeds and so, after updating, the Custom Facebook Feed plugin will automatically keep your oEmbeds working. It will also power any new oEmbeds you post going forward.
+
+= 3.15.2 =
+* Fix: Fixed an issue with image resizing when using the full-width layout which caused images to display at a smaller size.
+* Fix: Fixed an issue when there are multiple album, photo, or video feeds on the same page where loading more posts would affect posts in other feeds.
+* Fix: Fixed an issue where the lightbox caption in album feeds would be displayed incorrectly if an item had no caption.
+* Fix: Fixed a JavaScript error which would occur on the settings page if single or double quotes were included in any fields when manually connecting an account.
+
+= 3.15.1 =
+* Fix: Fixed an issue with the "account" shortcode option not working for some accounts.
+* Fix: Fixed an issue with the popup modal when connecting a group.
+* Fix: Don't display an admin error notice if an empty data array is returned by Facebook for an events feed.
+* Fix: Added a rare issue when using the "offset" setting and the masonry layout to display reviews using the [Reviews extension](https://smashballoon.com/extensions/reviews/).
+
+= 3.15 =
+* New: Added compatibility with our new [Social Wall](http://smashballoon.com/social-wall/?utm_source=plugin-pro&utm_campaign=cff&utm_medium=readme) plugin, which allows you to combine feeds from Instagram, Facebook, Twitter, and YouTube into one social media "wall". If you are using our Smash Balloon All-Access Bundle then the Social Wall plugin is included at no additional cost. Just log into your account to download and install the plugin.
+* Fix: Added a workaround for an issue caused by lazy-loading plugins which sometimes resulted in blank images in the feed.
+* Fix: Fixed an issue with the Like Box widget not displaying if it's width was set to a fractional pixel.
+* Fix: Iframes would be hidden in the lightbox in some themes.
+* Fix: Fixed display issues caused by screen reader text for some feed types.
+* Fix: Fixed PHP warning related to a deprecated use of the "implode" function.
+* Fix: Fixed empty item in the carousel when using a carousel layout with the image resizing feature.
+
+= 3.14.2 =
+* Fix: Fixed a fatal PHP error occurring for some users.
+* Fix: Removed stray "section" closing tag which was causing a layout issue in some themes and inadvertently displayed the PPCA notice.
+
+= 3.14.1 =
+* Fix: Added a fallback for the image resizing feature added in v3.14 in case JavaScript is not working on the page
+* Fix: The visual header option now works with the [Multifeed extension](https://smashballoon.com/extensions/multifeed/) and will display the header information for the first Facebook page specified in the settings or shortcode.
+* Fix: Fixed some stray PHP notices if the Multifeed extension is being used due to the PPCA error check in the previous update.
+
+= 3.14 =
+* Important: Due to upcoming Facebook API changes on September 4, 2020, it will only be possible to display feeds from Facebook pages which you are an admin of. If a PPCA Error notice is displayed above your feed then this change will affect one or more of your feeds. For more information about this change, please [see here](https://smashballoon.com/facebook-api-changes-september-4-2020/).
+* New: As Facebook only provides large image sizes in their API for timeline feeds then it often results in images being displayed in your feed which are much larger than needed. With this update, the plugin will now create resized versions of the larger images and store them locally on your server. It will then detect the width of your feed and select the optimal sized images to display. Storing resized images is enabled by default but can be disabled in the following location: Facebook Feed > Customize > Misc > Image Resizing.  The plugin uses sizes of 130px, 250px, 400px, and 720px, but this can be customized by using the [cff_resized_image_sizes](https://smashballoon.com/specifying-exact-image-sizes-using-the-cff_resized_image_sizes-filter/) filter.
+* New: For other feed types, the plugin will now choose the optimal image size from Facebook's CDN and display it in your feed, helping to reduce the page weight and increase load time.
+* New: Added support for images in Marketplace posts in group feeds.
+* New: Added support for videos created using Facebook Canvas
+* Tweak: Added the "pagetype" setting to the shortcode when clicking the "Add to another feed" button on the Settings page to ensure it's set correctly
+* Fix: Fixed a minor compatibility issue with the upcoming WordPress 5.5 release
+* Fix: Unpublished videos were being displayed in the feed when showing a feed of just video posts. These are now hidden until published.
+* Fix: An API request was being made to get the data for the visual header even if the header wasn't being displayed in the feed.
+* Fix: Removed the see more/less links from post text when using the email share link.
+* Fix: Fixed an issue with the lighbox showing incorrect images if two posts in the same feed had the exact same Facebook image in them.
+* Fix: Fixed an bug where images inside an album would not be displayed at full size.
+
+= 3.13.1 =
+* Fix: New JavaScript code was not being applied for new visual header layout setting due to caching of old JavaScript file.
+* Fix: Carousel extension was not working in version 3.13.
+* Fix: Removed screen reader text that was causing layout issues.
+* Fix: Disabled the "About Us" page plugin installation if using a version of WordPress earlier than 4.6.
+
+= 3.13 =
+* New: Added a new visual header option which displays the cover photo, avatar, page name, bio, and number of likes from your Facebook page at the top of your feeds. To enable the header, go to Facebook Feed > Customize > General > Header > Header Type > Visual.
+* New: Added a setting to display a different number of posts on mobile devices vs desktop. While on the configure tab, check the box "Show different number for mobile" to reveal the setting.
+* New: You can now use the "colsmobile" shortcode setting to set the number of columns on mobile for any feed type, not just timeline feeds. Eg: colsmobile=3.
+* New: Lightbox images and videos can be changed by swiping right and swiping left when using a touch device.
+* New: Added a PHP filter "cff_post_text" to change the post text before outputting it in the feed HTML.
+* New: To help us improve the plugin we have added usage tracking so that we can understand what features and settings are being used, and which features matter to you the most. The plugin will send a report in the background once per week with your plugin settings and basic information about your website environment. No personal or sensitive data is collected (such as email addresses, Facebook account information, license keys, etc). You can opt-out by simply disabling the setting at: Facebook Feed > Customize > Misc > Enable Usage Tracking. See [here](https://smashballoon.com/custom-facebook-feed/docs/usage-tracking/) for more information.
+* New: Added capability "manage_custom_facebook_feed_options". Users with this capability can make changes to Facebook Feed settings and view admin only messages.
+* Fix: Fixed PHP warning when link did not contain a forward slash.
+* Tweak: AJAX calls now use admin-ajax.php for better compatibility with some security plugins and settings.
+
+= 3.12.1 =
+* Fix: Fixed an error occurring for Group feeds due to a change in the Facebook API.
+* Fix: Some connection error notices were not clearing automatically.
+* Fix: Facebook Feed Gutenberg block causing an error when added to the editor and not rendering.
+* Tweak: Now shows multiple event times for past events if applicable.
+
+= 3.12 =
+* New: Email alerts for critical issues. If there's an issue with a Facebook feed on your website which hasn't been resolved yet then you'll receive an email notification to let you know. This is sent once per week until the issue is resolved. These emails can be disabled by using the following setting: Facebook Feed > Customize > Misc > Feed Issue Email Report.
+* New: Admin notifications for critical issues. If there is an error with the feed, admins will see notices in the dashboard and on the front-end of the site along with instructions on how to resolve the issue. Front-end admin notifications can be disabled by using the following setting: Facebook Feed > Customize > Misc > Disable Admin Error Notice.
+* New: Added a WordPress 'Site Health' integration. If there is a critical error with your feeds, it will now be flagged in the site health page.
+* New: Added "About Us" page for those who would like to learn more about Smash Balloon and our other products. Go to Facebook Feed -> About Us in the dashboard.
+
+= 3.11 =
+* New: Added a "Custom Facebook Feed" Gutenberg block to use in the block editor, allowing you to easily add a feed to posts and pages. To use the block, open the Gutenberg editor and click the + button in the top left. Search for "Custom Facebook Feed" and then select the block to insert it.
+
+= 3.10.9 =
+* Fix: Added a workaround for a Facebook API bug which was causing some live videos to be displayed very small
+* Fix: Fixed an issue where the link to Facebook inside the popup lightbox for live videos was not working successfully
+* Fix: Added compatibility for lazy loading plugins which would sometimes cause images in the feed not to be displayed
+
+= 3.10.8 =
+* Fix: Comment counts weren't displaying accurately for some feeds due to a Facebook API bug. Added a workaround until the bug is resolved by Facebook.
+* Fix: Events in your timeline can now be filtered using words or hashtags in the event name, location, address, or description.
+
+= 3.10.7 =
+* Tested with upcoming WordPress 5.4 update
+* Tweak: Updated Facebook API calls
+* Fix: Minor bug fixes
+
+= 3.10.6 =
+* Fix: Added a workaround for a Facebook API bug which caused some feeds to display an "Unknown Error" message. If you are experiencing this issue then please click "Save Changes & Clear Cache" on the plugin Settings page in WordPress.
+* Fix: Fixed an issue if multiple videos used the exact same thumbnail image file which caused an issue displaying the video in the lightbox
+* Fix: Fixed an issue with event feeds if the Facebook page had more than 200 upcoming events
+
+= 3.10.5 =
+* Tweak: Added 'rel="noopener"' to all external links and added 'rel="noreferrer"' to all non-Facebook links. Thanks to Dev VIP for the suggestion.
+* Tweak: Added a header with album details to Album extension feeds. Requires [Album extension](https://smashballoon.com/extensions/album/) v1.0.4.
+* Tweak: When reconnecting an account on the settings page, if there's an issue with the existing access token then it'll be automatically replaced.
+* Fix: Fixed a bug when showing a timeline feed containing only event posts where they would be missing some content.
+* Fix: Fixed an issue when viewing the lightbox for a post which contained multiple photos where the caption was only displayed for the first post.
+* Fix: Fixed a JavaScript conflict with the [Forminator](https://wordpress.org/plugins/forminator/) plugin.
+
+= 3.10.4 =
+* Fix: Fixed a JavaScript error in the admin caused by the previous update. Apologies for any inconvenience.
+
+= 3.10.3 =
+* Fix: Fixed an issue with event timezones if the event contained multiple event times
+* Fix: Fixed an admin JavaScript error if the Facebook Page ID contained invalid characters
+
+= 3.10.2 =
+* New: Added a setting to choose to exclude "supporter only" posts. This can be set in the following location: Facebook Feed > Customize > Misc > Advanced > Hide "supporter only" posts.
+* Fix: Fixed an issue with post and event date timezones due to changes in the WordPress 5.3 update
+* Fix: Fixed a rare issue where a JavaScript error would occur in the WordPress admin if a Facebook account was manually connected and the Page ID used was the full URL
+* Fix: Fixed a rare JavaScript error in the admin when using older web browsers
+* Fix: Fixed occasional PHP notices caused by some private group posts
+* Tweak: Improved the manual account connection process
+* Tweak: Some minor UI tweaks to match the new WordPress 5.3 UI style
+
+= 3.10.1 =
+* Fix: Fixed an issue where shared links with multiple images weren't being displayed in an image slider as expected due to Facebook changing the fields in the API response
+* Fix: If there's a server configuration issue and the site can't connect to Facebook then no error message would be displayed to the admin due to a change in the last update.
+
+= 3.10 =
+* New: Added a backup cache so the feed and comments will still display even if there's an error from the Facebook API.
+* New: You can now easily manage multiple page or group accounts on the plugin settings page allowing you to easily add them to other feeds on your site.  When you connect a page or group you will now see it listed in the "Connected Accounts" section. You can add it to the primary feed or to another feed by using the new `account` shortcode option.
+* New: Added a new setting to select a size for the shared link image, small square (130px), large square, or full. This can be found at: Customize > Misc > Media, or set using the `linkimagesize` shortcode option.
+* Tweak: Added the link source URL below the title for shared link posts
+* Tweak: Added a filter which can be used to filter the API data when returned; `cff_filter_api_data`.
+* Tweak: Made filter/exfilter not case-sensitive
+* Tweak: Updated to use v4.0 of the Facebook API
+* Tweak: Removed legacy code for getting full size images
+* Fix: Added new shortcode `groupprivacy` which if set to 'closed' or 'secret' will switch to use a HTML video player as videos from Closed and Secret groups can't be played using the Facebook Video Player widget.
+* Fix: Fixed an issue with photos and albums in group posts sometimes not displaying correctly
+* Fix: Some themes would prevent the "Share" link from working successfully
+* Fix: When SVGs are disabled the SVG code at the top of the feed is completely excluded
+* Fix: Fixed an issue with some @tag links in post text due to Facebook API change
+* Fix: Fixed an issue with the welcome page displaying blank on update when disabled
+
+= 3.9.1 =
+* Fix: Fixed an issue with some Spotify player embeds not displaying successfully
+* Fix: Fixed a sporadic issue with photos/videos in Group feed posts
+* Fix: Fixed an issue where a lists of groups or pages wouldn't be displayed when retrieving an Access Token due to a server configuration issue
+* Fix: Fixed an issue with the lightbox caption when displaying both a regular feed and event feed on the same page
+* Fix: Fixed an occasional layout issue with "like" information inside the comments box
+* Fix: Added a check for empty "Message page" links
+* Fix: When using the Reviews extension the number of posts wasn't being respected in masonry grid layouts
+* Fix: Removed all fallback Access Tokens
+* Tweak: Now uses the visitor_posts endpoint to display visitor post feeds
+* Tweak: Review feeds now hide negative recommendations by default
+
+= 3.9 =
+* New: Facebook Groups are making their long-awaited return to the plugin! You can now display timeline posts, events, videos, and albums from groups that you've added our app to'. Just click the 'Log in and get my Access Token' button on the plugin's Settings page and select 'Facebook Group'. Follow the prompts to connect your Group and display your feed.
+* New: The plugin now supports Spotify player embeds and will automatically create a player inside your post when you share a Spotify link.
+* Fix: The JavaScript for the multi-column layout is now only loaded if a multi-column layout is actually being used on the page
+* Fix: Now displays the full event text in the popup lightbox
+* Fix: Fixed an issue with images shared from Instagram sometimes not being displayed
+* Fix: Fixed an issue with grid feed cursor pagination method when the post limit was set to be higher than the number of posts in the feed
+* Fix: If using the Multifeed extension the plugin will now ignore bad Facebook IDs and still display the posts from other IDs
+* Fix: Added a class to the "No Facebook ID" notice
+* Fix: Fixed a bug where double hashtag symbols wouldn't work in the filter settings
+* Tweak: Displays a helpful notice if there's an issue activating the license key
+* Tweak: Made changes to the license renewal notification notice
+* Tweak: Added a link to the bottom of the "Welcome" update page to disable it
+* Tweak: Added classes to the event location information so that they can be targeted with CSS
+
+= 3.8.2 =
+* Fix: Fixed an issue with some feeds not displaying when a singular post type was selected and the source was set to be the timeline
+* Fix: Fixed an issue with photos in the Album extension not displaying under some circumstances
+* Fix: Removed "http://" from telephone numbers in "Call Now" buttons
+
+= 3.8.1 =
+* Fix: Fixed an issue causing a possible PHP notice if no subattachments were found for an album post
+* Fix: Fixed an issue with call-to-action button links which didn't contain a http protocol at the start of them
+
+= 3.8 =
+* New: Support for v3.3 of the Facebook API
+* New: Added a "Feed Columns" setting to allow you to display your timeline feed in multiple columns. This can be found under the "General" tab on the "Customize" page, or by using the 'cols' and 'colsmobile' shortcode settings.
+* Tweak: Compacted the styling of the comment box icons when posts are displayed in a narrow column
+* Fix: Fixed an issue with some call-to-action link URLs when a link protocol wasn't included
+* Fix: Added a fix for filtering using Chinese or other foreign characters
+* Fix: If the Like Box width was set in percentage then it caused an error in the Like Box widget
+* Fix: Fixed a rare PHP error which would occur on install
+* Fix: Fixed an issue with the welcome page layout in WordPress 5.2+
+
+= 3.7.3 =
+* New: Added support for "Get Directions" buttons in posts. This text can be translated using the following setting: Facebook Feed > Customize > Custom Text/Translate > Call-to-action Buttons.
+* Fix: Accessibility fixes and improvements
+* Fix: Fixed an issue caused when the "exfilter" setting ended in a comma
+* Fix: Fixed an issue when using parentheses in the filter settings
+* Fix: The Access Token selection area was being cut off on small screens when a lot of Facebook pages were listed
+* Fix: Increased the z-index of the multiple event time drop down so it's displayed above all other elements
+* Tweak: Individual Facebook API requests for avatars have now been removed and bundled into the main API request
+* Tweak: Changed the pagination for past event feeds so that it retrieves posts in batches
+
 = 3.7.2 =
 * Fix: Fixed an issue caused by spaces between entries in the filtering settings for some feed types
 * Fix: When events from multiple different timezones were displayed then the end time would sometimes be incorrect
@@ -594,7 +1030,7 @@ Display a **completely customizable**, **responsive** and **search engine crawla
 = 2.4.7 =
 * New: Added a setting to load a local copy of the icon font instead of the CDN version, or to not load the icon font at all if it's already included in your site. This can be found at the bottom of the 'Misc' settings page.
 * Fix: Added support for Vimeo videos which are embedded into the original Facebook post using shortened URLs, such as http://spr.ly
-* Fix: Fixed a rare bug which was causing the WordPress admin section to load very slowly for a few users whose site's IP addresses were blocked by our web host 
+* Fix: Fixed a rare bug which was causing the WordPress admin section to load very slowly for a few users whose site's IP addresses were blocked by our web host
 * Fix: Removed query string from the end of CSS and JavaScript file references and replaced it with the wp_enqueue_script 'ver' parameter instead
 * Fix: Removed some PHP notices inadvertently introduced in the last update
 

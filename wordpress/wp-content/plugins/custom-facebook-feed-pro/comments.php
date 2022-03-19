@@ -1,12 +1,12 @@
 <?php
 
-isset($_GET['usegrouptoken']) ? $usegrouptoken = $_GET['usegrouptoken'] : $usegrouptoken = false;
-isset($_GET['useowntoken']) ? $useowntoken = $_GET['useowntoken'] : $useowntoken = false;
+isset($_REQUEST['usegrouptoken']) ? $usegrouptoken = $_REQUEST['usegrouptoken'] : $usegrouptoken = false;
+isset($_REQUEST['useowntoken']) ? $useowntoken = $_REQUEST['useowntoken'] : $useowntoken = false;
 
 include('connect.php');
 
 //Get Post ID
-$comment_id = $_GET['id'];
+$comment_id = sanitize_key( $_REQUEST['id'] );
 
 $json_object = cff_fetchUrl("https://graph.facebook.com/" . $comment_id . "/?fields=comments{created_time,from{name,id,picture{url},link},id,message,message_tags,attachment,like_count}&access_token=" . $access_token);
 
@@ -26,5 +26,3 @@ $json_object = json_encode($json_object);
 if( empty($json_object) || $json_object == '' ) echo '';
 
 echo $json_object;
-
-?>

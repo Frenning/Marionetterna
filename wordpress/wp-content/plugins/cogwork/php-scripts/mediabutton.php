@@ -1,4 +1,8 @@
 <?php
+/* The button for creating shortcode doesn't work in Elementor Pagebuilder */
+if(is_admin() && did_action( 'elementor/loaded' )) {
+    return;
+}
 
 function cwAddMediaButton() {
 	require_once(CW_PHP_CLASSES_DIR.'cwMediaButton.php');

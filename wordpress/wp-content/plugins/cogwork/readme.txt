@@ -2,12 +2,12 @@
 Contributors: Erik Terenius
 Tags: CogWork, MinaAktiviteter, Dans.se, shop, events, booking, registration, payment, customers, members
 Requires at least: 4.6
-Tested up to: 5.2
-Stable tag: 0.2
+Tested up to: 5.9
+Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Enables shortcodes that includes resourses from CogWork (MinaAktiviteter/Dans.se)
+Enables shortcodes that includes resourses from CogWork (MinaAktiviteter/Dans.se/Idrott.se)
 
 == Description ==
 
@@ -32,6 +32,7 @@ To include a list of products or bookable events you only need to write [cw shop
 [cw shop] List of events/articles with booking functionality
 [cw calendar] Simple events and scheduled occasions
 [cw membership] Click to register a new membership
+[cwChildPages] Output ul list with links to childpages. 
 
 = What short codes are planned? =
 
@@ -94,3 +95,53 @@ To include a list of products or bookable events you only need to write [cw shop
 
 = 1.5.1 =
 * Removed htmlformating in cwLinks since WP does this in advance
+
+= 1.5.2 =
+* Added shortcode cwService that does not fetch any external data
+* Updated shortcode cwLink
+* Updated shortcode cwChildPages
+
+= 1.6 =
+* Added CogWork block to blockeditor to to make it easier for the user to add CW shortcodes
+* Added more functionality to cwLink cwToc/cwChildPages and cwService
+
+= 1.6.1 =
+* New ordering CwToc
+
+= 1.6.2 =
+* Language for cwShop will automatically be set to WordPress site language if it is supported language Swedish, English, Finnish or Spanish.
+* Added more functionality to cwLink cwToc/CwChildPages and cwService
+
+= 1.6.3 =
+* Minor update to cwShortCodeProcessor class
+
+= 1.6.4 =
+* Fixed compatibility with PHP 5.5 and older versions.
+
+= 1.6.5 =
+* Disabled session_start() in admin mode. Improvements to how session cookie is stored from URL parameter
+
+= 1.6.6 =
+* Added Idrott.se as option for Extern CW-server under plugin settings
+
+= 1.6.7 =
+* Fixed compatibility issues with Elementor by disabling preview of shortcode in Elementor Pagebuilder
+* Checked compatibility with WordPress 5.5
+
+= 1.6.8 =
+* Fixed error in cwShortCodeProcessor.php that caused error message
+
+= 1.7 =
+* Fixed combability issues with some websites by replacing PHP Session with cookie for storing data between page visits.
+
+= 1.7.2 =
+* Checked compatibility with WordPress 5.7
+
+= 1.7.3 =
+* Checked compatibility with WordPress 5.8
+
+= 1.7.5 =
+* Checked compatibility with WordPress 5.9
+
+
+

@@ -10,14 +10,14 @@
 /* =Navigation
 ----------------------------------------------- */
 .navbar{
-    height: 67px;
+    height: 130px;
     border-radius: 0;
-    background-color: #000;
+    background-color: #fff;
 }
 
 #menu-header-menu {
     .active > a{
-        color: #FFF;  
+        color: #DAA520;  
     }
 }
 
@@ -57,11 +57,11 @@
 }
 
 .navbar > .container .navbar-brand {
-color: #DAA520;
+color: #000;
 font-size: 24px;
-&:hover {
-    color: #FFF;
-}
+    &:hover {
+        color: #DAA520;
+    }
 }
 
 .navbar-nav > {
@@ -76,11 +76,12 @@ font-size: 24px;
         a {
             position: relative;
             display: block;
+            font-size: 22px;
             padding: 18px 15px;
-            color: #DAA520;
+            color: #000;
             line-height: 30px;
             &:hover, &:active {
-                color: #FFF;
+                color: #DAA520;
             }    
         } 
     } 
@@ -153,7 +154,8 @@ background-color: rgba(0, 0, 0, 0.1);
         height: 100%;
         .navbar .container{
             display:block;
-        }       
+        }
+        
     }
     #hamburger-button{
         padding:0;
@@ -217,7 +219,7 @@ background-color: rgba(0, 0, 0, 0.1);
 
         .menu-item-has-children
         {
-            border-top: #DAA520 1px solid;       
+            border-top: #DAA520 1px solid;
             &:first-child{
                 border-bottom: 0;
             }
@@ -226,11 +228,10 @@ background-color: rgba(0, 0, 0, 0.1);
             ul{
                 background-color: transparent;
                 position: relative;
-                top: 0px !important;
                 box-shadow:none;
                 -webkit-box-shadow:none;
                 &.dropdown-menu.show{
-                    display: block;                   
+                    display: block;
                 }
                 li{
                     width:100% !important;
@@ -263,6 +264,7 @@ background-color: rgba(0, 0, 0, 0.1);
 
 @media (max-width: 576px) {
 #menu-header-menu{
+    padding-top: 100px !important;
     .menu-item-has-children
     {
         ul{

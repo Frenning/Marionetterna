@@ -31,6 +31,7 @@ class cwOptions {
 						<select name="cogwork_option[websiteCode]">
 							<option value="minaaktiviteter" <?php if ( $options['websiteCode'] == 'minaaktiviteter' ) echo 'selected="selected"'; ?>>MinaAktiviteter.se</option>
 							<option value="dans" <?php if ( $options['websiteCode'] == 'dans' ) echo 'selected="selected"'; ?>>Dans.se</option>
+							<option value="idrott" <?php if ( $options['websiteCode'] == 'idrott' ) echo 'selected="selected"'; ?>>Idrott.se</option>
 							<option value="test" <?php if ( $options['websiteCode'] == 'test' ) echo 'selected="selected"'; ?>>Test</option>
 							<option value="local" <?php if ( $options['websiteCode'] == 'local' ) echo 'selected="selected"'; ?>>Localhost</option>
 						</select>

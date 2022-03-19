@@ -50,20 +50,18 @@
 
 		</div>
 	</nav><!-- .site-navigation -->
-
-		<div id="content" class="site-content container">
-		
-            <div class="container main-content-area"><?php
-
-                global $post;
-                if( get_post_meta($post->ID, 'site_layout', true) ){
-                        $layout_class = get_post_meta($post->ID, 'site_layout', true);
-                }
-                else{
-                        $layout_class = of_get_option( 'site_layout' );
-                }
-                if( is_home() && is_sticky( $post->ID ) ){
-                        $layout_class = of_get_option( 'site_layout' );
-                }
-                ?>
-                <div class="row <?php echo $layout_class; ?>">
+	<div id="content" class="site-content">		
+		<div class="container">
+			<?php
+				global $post;
+				if( get_post_meta($post->ID, 'site_layout', true) ){
+						$layout_class = get_post_meta($post->ID, 'site_layout', true);
+				}
+				else{
+						$layout_class = of_get_option( 'site_layout' );
+				}
+				if( is_home() && is_sticky( $post->ID ) ){
+						$layout_class = of_get_option( 'site_layout' );
+				}
+			?>
+			<div class="row <?php echo $layout_class; ?>">

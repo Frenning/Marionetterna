@@ -37,6 +37,9 @@ define('DB_CHARSET', 'utf8mb4');
 /** The Database Collate type. Don't change this if in doubt. */
 define('DB_COLLATE', '');
 
+define('WP_HOME','http://localhost/marionetterna/wordpress/'); 
+define('WP_SITEURL','http://localhost/marionetterna/wordpress/');
+
 /**#@+
  * Authentication Unique Keys and Salts.
  *
@@ -46,14 +49,14 @@ define('DB_COLLATE', '');
  *
  * @since 2.6.0
  */
-define('AUTH_KEY',         'rino8V5gI)fx><Xr*3e^;@Im*)9cOgOBP9j+8uDw!_BL+x-9q34 m@q&Nyib6w55');
-define('SECURE_AUTH_KEY',  '!)+Zl9C[_x`ZAkc*U|itmR3+7&IoMS+8Izz6[4.k(Gt3YYk=,<Tm.^PoMDjB5jp<');
-define('LOGGED_IN_KEY',    'hMV.X4y|6{NwJcN7B5Dh.|)l-.E4=&El6Pz;wN;j6dR`_@ldJJ/+VxrFZK?gZ8N?');
-define('NONCE_KEY',        ']maa:n(%!!x&$$#/!VaN|a5YLE(w%JR1y-g+U00;lT1jev*|Y?~HA[3M[^g& ~@w');
-define('AUTH_SALT',        'iX5B}1JjU/Ig<>N-nxjl38!Gsu>>y!Wg*vxABapM$UF!-MJKPT?YJ0#.+xRlve$+');
-define('SECURE_AUTH_SALT', 'A5Z=ig^rRhbDBtq`u~><x YE[WncI;$2z3IAqk:$ ^MYJRtItc_Q)_y*Wd}Uq<-n');
-define('LOGGED_IN_SALT',   '+T?ct}iaurMRRg:{|o%3(U{<`|]-J%9sqw+Eh`x~5OYUh^|8sM&[J9x,Bh1L:O+h');
-define('NONCE_SALT',       '$!+.&*5XcYhWw,PHLQZwkd]}0j3CB0BeB7W}X7+mydrG[bC,3*DYfWhYIMtNj-z*');
+define('AUTH_KEY',         'x KQZ}(uZ%]%Z=_ZwDUl#6:OhHB2/;Q^i/SmJQk$lyEX;A8PwkE-6N)zm &,pM1B');
+define('SECURE_AUTH_KEY',  ' Q4a(wt^@?eB/=a~DhRg{io|LyHKTsg<jN(Zgr@vR*L4qmJuL1eLnP3SW)ms2XH`');
+define('LOGGED_IN_KEY',    ' 4#6CbTny#Lcxt:D)DRA53AtbtZ7vqPF n$2{BpjtL#1eSlSsGLcM?#8yU/ldc05');
+define('NONCE_KEY',        '1JgaHO1z~]DLI8y^qQI^S8A~_ZB%V=jhI]wg< Gi6NWL%!`YY)i[di=Amh3WYL6-');
+define('AUTH_SALT',        'x=Sui}b[iPR* e@:VjapE^=5{kGVi_IH0i2=9Dd~jqY $3OXafBE?H|(>svkw*Au');
+define('SECURE_AUTH_SALT', '+V+i/kh}<07`9;J-d,yAF^Z$V(@u-7jcOR2psGk.:sgP%-A6dijX, GFtC~UXFk|');
+define('LOGGED_IN_SALT',   'T)$Eur{e)}?| {7^$=0-1(+}fT*G9gJlu=g=+!U/doJw#:ip*`oAK9(v,D0(_AQn');
+define('NONCE_SALT',       'jcbJB107^.4/5BajP/vxmdou606hsS.8AJM$JO@e,u|yK$BAm;G+QB=@+s%<Q4j;');
 
 /**#@-*/
 
