@@ -50,12 +50,25 @@ body {
     overflow-x: scroll;
   }
 
+  button {
+    background-color: #000;
+    &::-moz-focus-inner {
+      /* Corrects inner padding and border displayed oddly in FF3/4 www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ */
+      border: 0;
+      padding: 0;
+    }
+  }
+
   a {
     text-decoration: none;
     -webkit-transition: all 0.2s;
     -moz-transition: all 0.2s;
     -o-transition: all 0.2s;
     transition: all 0.2s;
+    color: #DAA520;
+    &:hover, &:active {
+      color: #0645AD;
+    }    
     &:hover {
       text-decoration: none;
     }
@@ -67,14 +80,10 @@ body {
     }
   }
   
-  h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
-    color: #DAA520;
-  }
-  
   h1, .h1 {
     color: #333;
-    padding: 10px 0px 10px 0px;
     font-size: 42px;
+    padding: 10px 0px 10px 0px;
   }
   
   h2, .h2 {
@@ -93,6 +102,7 @@ body {
   }
   
   h5, .h5 {
+    color: #777;
     font-size: 16px;
     font-weight: bold;
     margin-top: 5px;
@@ -100,9 +110,9 @@ body {
   }
   
   h6, .h6 {
-    margin: 0px;
+    color: #888;
     font-size: 14px;
-    color: #333;
+    margin: 0px;
   }
   
   img {
@@ -110,11 +120,6 @@ body {
     /* Make sure images are scaled correctly. */
     max-width: 100%;
     /* Adhere to container width. */
-  }
-  
-  .background-image {
-    z-index: 100;
-    width: 100%;
   }
   
   button, input, select, textarea {
@@ -128,197 +133,8 @@ body {
     /* Improves appearance and consistency in all browsers */
   }
   
-  select {
-    width: 250px;
-    border: 1px solid #DCE4EC;
-    background-color: #FFF;
-    height: 30px;
-    padding: 5px;
-  }
-  
-  input {
-    &[type="checkbox"], &[type="radio"] {
-      padding: 0;
-      /* Addresses excess padding in IE8/9 */
-    }
-    &[type="search"] {
-      -webkit-appearance: textfield;
-      /* Addresses appearance set to searchfield in S5, Chrome */
-      -webkit-box-sizing: content-box;
-      /* Addresses box sizing set to border-box in S5, Chrome (include -moz to future-proof) */
-      -moz-box-sizing: content-box;
-      box-sizing: content-box;
-      &::-webkit-search-decoration {
-        /* Corrects inner padding displayed oddly in S5, Chrome on OSX */
-        -webkit-appearance: none;
-      }
-    }
-  }
-  
-  button::-moz-focus-inner {
-    /* Corrects inner padding and border displayed oddly in FF3/4 www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ */
-    border: 0;
-    padding: 0;
-  }
-  
-  input {
-    &::-moz-focus-inner {
-      /* Corrects inner padding and border displayed oddly in FF3/4 www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ */
-      border: 0;
-      padding: 0;
-    }
-    &[type="text"], &[type="email"], &[type="url"], &[type="password"], &[type="search"] {
-      color: #666;
-      border: 1px solid #E8E8E8;
-      border-radius: 3px;
-    }
-  }
-  
-  textarea {
-    color: #666;
-    border: 1px solid #E8E8E8;
-    border-radius: 3px;
-  }
-  
-  input {
-    &[type="text"]:focus, &[type="email"]:focus, &[type="url"]:focus, &[type="password"]:focus, &[type="search"]:focus {
-      color: #111;
-    }
-  }
-  
-  textarea:focus {
-    color: #111;
-  }
-  
-  textarea {
-    overflow: auto;
-    /* Removes default vertical scrollbar in IE6/7/8/9 */
-    padding-left: 3px;
-    vertical-align: top;
-    /* Improves readability and alignment in all browsers */
-    width: 100%;
-  }
-  
-  /* Alignment */
-  
-  .alignleft {
-    display: inline;
-    float: left;
-    margin-right: 1.5em;
-  }
-  
-  .alignright {
-    display: inline;
-    float: right;
-    margin-left: 1.5em;
-  }
-  
-  .aligncenter {
-    clear: both;
-    display: block;
-    margin: 0 auto;
-  }
-  
-  /* Text meant only for screen readers */
-  
-  .screen-reader-text {
-    clip: rect(1px, 1px, 1px, 1px);
-    position: absolute !important;
-    &:hover, &:active, &:focus {
-      background-color: #f1f1f1;
-      border-radius: 3px;
-      box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
-      clip: auto !important;
-      color: #21759b;
-      display: block;
-      font-size: 14px;
-      font-weight: bold;
-      height: auto;
-      left: 5px;
-      line-height: normal;
-      padding: 15px 23px 14px;
-      text-decoration: none;
-      top: 5px;
-      width: auto;
-      z-index: 100000;
-      /* Above WP toolbar */
-    }
-  }
-  
-  /* =Widgets
-  ----------------------------------------------- */
-  
-  .widget {
-    display: flex;
-    margin: 0 0 1.5em;
-    background-color: #FFF;
-    opacity: 0.92;
-    padding: 10px;
-    border-radius: 10px;
-    align-content: center;
-  }
-  
-  .widget-area {
-    padding: 0;
-  }
-  
-  /* Make sure select elements fit in widgets */
-  
-  .widget select {
-    max-width: 100%;
-  }
-
-  /* =Buttons
-  ----------------------------------------------- */
-  
-  .btn-default {
-    float: right;
-    background-color: #DAA520;
-    border-color: #DAA520;
-  }
-  
-  .label-default {
-    background-color: #DAA520;
-    border-color: #DAA520;
-  }
-  
-  .btn-default:hover {
-    background-color: #1b926c;
-    border-color: #1b926c;
-  }
-  
-  .label-default[href] {
-    &:hover, &:focus {
-      background-color: #1b926c;
-      border-color: #1b926c;
-    }
-  }
-  
-  .btn-default {
-    &:hover, &:focus, &:active, &.active {
-      background-color: #1b926c;
-      border-color: #1b926c;
-    }
-  }
-  
-  #image-navigation {
-    .nav-previous a:hover, .nav-next a:hover {
-      background-color: #1b926c;
-      border-color: #1b926c;
-    }
-  }
-  
-  .btn.btn-default {
-    color: #FFF;
-  }
-  
   /* =Custom Styles
   ----------------------------------------------- */
-  
-  #content {
-    padding: 40px 0;
-  }
-
   .site-branding {
     margin-top: 20px;
     margin-bottom: 20px;
@@ -331,6 +147,11 @@ body {
     font-size: 14px;
   }
   
+  .background-image {
+    z-index: 100;
+    width: 100%;
+  }
+
   .page-template-page-homepage-php .carousel {
     margin-top: -20px;
     margin-bottom: 20px;
@@ -346,11 +167,18 @@ body {
     }
   }
   
+  .frontpageButton {
+    display: block;
+    padding: 20px 80px;
+    margin: auto;
+  }
+
   .activityList {
     padding: 0px;
     margin: 0px;
     width: 100%;
   }
+
   .headline-area {
     padding: 40px 0;
   }
@@ -364,19 +192,13 @@ body {
 
   .content-area {
     background-color: #FFF;
+    opacity: 0.96;
     padding-top: 15px;
   }
 
   .main-content-area {
     max-width: 720px;
     margin: 0 auto;
-  }
-
-  .headline {
-    color: #FFF;
-    min-height: 100px;
-    text-align: center;
-    text-shadow: 0 0 3px #FFF, 0 5px 10px #000;
   }
 
   .content-leaders {
@@ -422,6 +244,50 @@ body {
     padding-top: 0px;
   }
 
+  /* Alignment */
+  
+  .align-left {
+    display: inline;
+    float: left;
+    margin-right: 1.5em;
+  }
+  
+  .align-right {
+    display: inline;
+    float: right;
+    margin-left: 1.5em;
+  }
+  
+  .align-center {
+    clear: both;
+    display: block;
+    margin: 0 auto;
+  }
+  
+  /* =Widgets
+  ----------------------------------------------- */
+  
+  .widget {
+    background-color: #FFF;
+    opacity: 0.92;
+    padding: 10px;
+  }
+
+  /* Layout */
+  
+  .no-sidebar #secondary, .full-width #secondary {
+    display: none;
+  }
+  
+  .no-sidebar #primary {
+    float: none;
+    margin: 0 auto;
+  }
+  
+  .full-width #primary {
+    width: 100%;
+  }
+
   /* =Footer
   ----------------------------------------------- */
   
@@ -429,9 +295,6 @@ body {
     background-color: #313233;
     color: #CCC;
     font-size: 12px;
-    a {
-      color: #ccc;
-    }
     ul li {
       border-bottom: 1px solid #444;
     }
@@ -497,6 +360,32 @@ body {
     }
   }
   
+  /* Text meant only for screen readers */
+    
+  .screen-reader-text {
+    clip: rect(1px, 1px, 1px, 1px);
+    position: absolute !important;
+    &:hover, &:active, &:focus {
+      background-color: #f1f1f1;
+      border-radius: 3px;
+      box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
+      clip: auto !important;
+      color: #21759b;
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      height: auto;
+      left: 5px;
+      line-height: normal;
+      padding: 15px 23px 14px;
+      text-decoration: none;
+      top: 5px;
+      width: auto;
+      z-index: 100000;
+      /* Above WP toolbar */
+    }
+  }
+
   /* =Mobile Styling
   ----------------------------------------------- */
   @media (max-width: 992px) {
@@ -532,19 +421,4 @@ body {
     .flex-caption {
       display: none;
     }
-  }
-  
-  /* Layout */
-  
-  .no-sidebar #secondary, .full-width #secondary {
-    display: none;
-  }
-  
-  .no-sidebar #primary {
-    float: none;
-    margin: 0 auto;
-  }
-  
-  .full-width #primary {
-    width: 100%;
   }

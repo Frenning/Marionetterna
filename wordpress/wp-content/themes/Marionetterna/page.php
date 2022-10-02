@@ -8,16 +8,17 @@
  * different template.
  */
 get_header(); ?>
-	<div id="primary" class="headline-area col-md-12">
-		<h1 class="headline"><?php the_title();?></h1>
-	</div><!-- #primary -->
 </div><!-- close .row -->
 </div><!-- close .container -->
 <div class="row">
   <div id="primary" class="col-md-12 content-area">
     <div class="main-content-area">
-		<p><?php echo (the_content());?></p>
+      <h1><?php the_title();?></h1>
+      <p><?php echo (the_content());?></p>
     </div>
   </div>
+</div>
+<div class="row">
+  <?php get_sidebar();?>
 </div>
 <?php get_footer(); ?>

@@ -12,7 +12,7 @@
 .navbar{
     height: 130px;
     border-radius: 0;
-    background-color: #fff;
+    background-color: #000;
 }
 
 #menu-header-menu {
@@ -57,10 +57,10 @@
 }
 
 .navbar > .container .navbar-brand {
-color: #000;
-font-size: 24px;
+    color: #DAA520;
+    font-size: 24px;
     &:hover {
-        color: #DAA520;
+        color: #2c2615;
     }
 }
 
@@ -78,25 +78,21 @@ font-size: 24px;
             display: block;
             font-size: 22px;
             padding: 18px 15px;
-            color: #000;
-            line-height: 30px;
-            &:hover, &:active {
-                color: #DAA520;
-            }    
+            line-height: 30px; 
         } 
     } 
 }
 
 .navbar-collapse {
-display:  block!important;
-height: auto!important;
-padding-bottom: 0!important;
-overflow: visible!important;
+    display:  block!important;
+    height: auto!important;
+    padding-bottom: 0!important;
+    overflow: visible!important;
 }
 
 .navbar-default .navbar-nav {
     display: inline-block;
-    .dropdown-menu{
+    .dropdown-menu {
         position: absolute;
     }
 
@@ -106,7 +102,7 @@ overflow: visible!important;
 }
 
 .dropdown-menu {
-    li{
+    li {
         a {
             display: block;
             padding: 14px 20px;
@@ -115,23 +111,23 @@ overflow: visible!important;
             white-space:  nowrap;
             &:hover {
                 background-color: rgba(255, 255, 255, 0.2);
-                color: #FFF;            
+                color: #2c2615;            
             }          
         }     
     }     
     .active > a {
         border: none;
-        color: #FFF;
+        color: #2c2615;
         &:hover, &:focus {
-        border: none;
+            border: none;
+        }
     }
-    }
-border-bottom: none;
-font-size: 14px;
+    border-bottom: none;
+    font-size: 14px;
 }
 
 .dropdown-menu .divider {
-background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 992px) {
