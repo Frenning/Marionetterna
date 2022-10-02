@@ -115,6 +115,51 @@
 						<div class="pods-wizard-option-content" id="pods-wizard-export">
 							<div class="pods-wizard-content">
 								<p><?php _e( 'Packages allow you to import/export your Pods, Groups, Fields, and other settings between any Pods sites.', 'pods' ); ?></p>
+
+								<p>
+									<a href="#toggle" class="button pods-wizard-toggle-all" data-toggle="all"><?php _e( 'Toggle everything on / off', 'pods' ); ?></a>
+								</p>
+							</div>
+
+							<div class="stuffbox pods-package-import-group">
+								<h3>
+									<label for="link_name"><?php _e( 'Choose whether to export Settings', 'pods' ); ?></label>
+								</h3>
+
+								<div class="inside pods-manage-field pods-dependency">
+									<div class="pods-field-option-group">
+										<div class="pods-pick-values pods-pick-checkbox pods-zebra">
+											<ul>
+												<?php
+												$data_name = 'settings';
+												$data = [
+													'all' => __( 'All Settings', 'pods' ),
+												];
+
+												$zebra = false;
+
+												foreach ( $data as $key => $label ) {
+													$checked = true;
+
+													$class = ( $zebra ? 'even' : 'odd' );
+
+													$zebra = ( ! $zebra );
+													?>
+													<li class="pods-zebra-<?php echo esc_attr( $class ); ?>">
+														<?php
+														echo PodsForm::field( $data_name . '[' . $key . ']', true, 'boolean', [
+															'boolean_yes_label' => $label,
+															'disable_dfv'       => true,
+														] );
+														?>
+													</li>
+													<?php
+												}
+												?>
+											</ul>
+										</div>
+									</div>
+								</div>
 							</div>
 
 							<?php
@@ -308,13 +353,21 @@
 
 						<span id="import-export"></span>
 
-						<div class="stuffbox hidden" id="import-export-results">
+						<div class="stuffbox hidden" id="pods-import-results">
+							<h3><?php _e( 'Imported Package', 'pods' ); ?></h3>
+
+							<div class="inside pods-manage-field pods-dependency">
+								<div class="pods-wizard-results"></div>
+							</div>
+						</div>
+
+						<div class="stuffbox hidden" id="pods-export-results">
 							<h3><?php _e( 'Exported Package', 'pods' ); ?></h3>
 
 							<div class="inside pods-manage-field pods-dependency">
 								<p>
-									<button id="pods-wizard-export-download" class="button button-secondary hidden"><?php esc_html_e( 'Download pods-package.json', 'pods' ); ?></button>
-									<button id="pods-wizard-export-copy" class="button button-secondary hidden"><?php esc_html_e( 'Copy the Package JSON', 'pods' ); ?></button>
+									<button id="pods-wizard-export-download" class="button button-secondary"><?php esc_html_e( 'Download pods-package.json', 'pods' ); ?></button>
+									<button id="pods-wizard-export-copy" class="button button-secondary"><?php esc_html_e( 'Copy the Package JSON', 'pods' ); ?></button>
 								</p>
 
 								<div class="pods-wizard-results"></div>
@@ -338,12 +391,18 @@
 </div>
 
 <script type="text/javascript">
-	const $pods_admin_package_import_export = jQuery( '#pods-form-ui-import-export' );
+	const $pods_admin_package_import_export  = jQuery( '#pods-form-ui-import-export' );
+	const $pods_admin_package_import_results = jQuery( '#pods-import-results' );
+	const $pods_admin_package_export_results = jQuery( '#pods-export-results' );
 
 	var pods_admin_wizard_callback = function ( step, completed ) {
 		if ( 2 == step || !step ) {
-			jQuery( '#pods-wizard-panel-2 div#import-export-results' ).slideUp( 'fast', function () {
-				jQuery( '#pods-wizard-panel-2 div#import-export-results div.pods-wizard-results' ).html( '' );
+			$pods_admin_package_import_results.slideUp( 'fast', function () {
+				jQuery( 'div.pods-wizard-results', $pods_admin_package_import_results ).html( '' );
+			} );
+
+			$pods_admin_package_export_results.slideUp( 'fast', function () {
+				jQuery( 'div.pods-wizard-results', $pods_admin_package_export_results ).html( '' );
 			} );
 		}
 
@@ -351,9 +410,6 @@
 	};
 
 	var pods_admin_submit_callback = function ( id ) {
-		jQuery( '#pods-wizard-panel-2 div#import-export-results div.pods-wizard-results' ).html( id );
-		jQuery( '#pods-wizard-panel-2 div#import-export-results' ).slideDown( 'fast' );
-
 		jQuery( '#pods-wizard-next' ).css( 'cursor', 'pointer' );
 		jQuery( '#pods-wizard-next' ).prop( 'disabled', false );
 		jQuery( '#pods-wizard-next' ).text( jQuery( '#pods-wizard-next' ).data( 'again' ) );
@@ -361,11 +417,11 @@
 		window.location.hash = 'import-export';
 
 		if ( 'export' === $pods_admin_package_import_export.val() ) {
-			jQuery( '#pods-wizard-export-copy' ).show().removeClass( 'hidden' );
-			jQuery( '#pods-wizard-export-download' ).show().removeClass( 'hidden' );
+			jQuery( 'div.pods-wizard-results', $pods_admin_package_export_results ).html( id );
+			$pods_admin_package_export_results.slideDown( 'fast' );
 		} else {
-			jQuery( '#pods-wizard-export-copy' ).hide().addClass( 'hidden' );
-			jQuery( '#pods-wizard-export-download' ).hide().addClass( 'hidden' );
+			jQuery( 'div.pods-wizard-results', $pods_admin_package_import_results ).html( id );
+			$pods_admin_package_import_results.slideDown( 'fast' );
 		}
 
 		return false;
@@ -377,8 +433,11 @@
 	};
 
 	var pods_admin_wizard_startover_callback = function () {
-		jQuery( '#pods-wizard-panel-2 div#import-export-results' ).hide();
-		jQuery( '#pods-wizard-panel-2 div#import-export-results div.pods-wizard-results' ).html( '' );
+		$pods_admin_package_import_results.hide();
+		jQuery( 'div.pods-wizard-results', $pods_admin_package_import_results ).html( '' );
+
+		$pods_admin_package_export_results.hide();
+		jQuery( 'div.pods-wizard-results', $pods_admin_package_export_results ).html( '' );
 	};
 
 	const $pods_admin_package_import_package_code = jQuery( '#pods-form-ui-import-package' );
@@ -405,18 +464,30 @@
 		$( document ).Pods( 'confirm' );
 		$( document ).Pods( 'sluggable' );
 
-		const toggle_all = {};
+		const toggle_all = {
+			all: true
+		};
 
 		$( '.pods-wizard-toggle-all' ).on( 'click', function ( e ) {
 			e.preventDefault();
 
-			if ( 'undefined' == typeof toggle_all[$( this ).data( 'toggle' )] ) {
-				toggle_all[$( this ).data( 'toggle' )] = true;
+			const toggleData = $( this ).data( 'toggle' );
+
+			if ( 'undefined' == typeof toggle_all[toggleData] ) {
+				toggle_all[toggleData] = true;
 			}
 
-			$( this ).closest( '.pods-field-option-group' ).find( '.pods-field.pods-boolean input[type="checkbox"]' ).prop( 'checked', (!toggle_all[$( this ).data( 'toggle' )]) );
+			let $parent;
 
-			toggle_all[$( this ).data( 'toggle' )] = (!toggle_all[$( this ).data( 'toggle' )]);
+			if ( 'all' !== toggleData ) {
+				$parent = $( this ).closest( '.pods-field-option-group' );
+			} else {
+				$parent = $( this ).closest( '.pods-wizard-option-content' );
+			}
+
+			$parent.find( '.pods-field.pods-boolean input[type="checkbox"]' ).prop( 'checked', (!toggle_all[toggleData]) );
+
+			toggle_all[toggleData] = (!toggle_all[toggleData]);
 		} );
 
 		const $import_package_reset = $( '#pods-form-ui-import-package-file-reset' );
@@ -446,7 +517,7 @@
 			$pods_admin_package_import_package_file.change();
 		} );
 
-		const $export_results = $( '#pods-wizard-panel-2 div#import-export-results div.pods-wizard-results' );
+		const $export_results = $( 'div.pods-wizard-results', $pods_admin_package_export_results );
 
 		$( '#pods-wizard-export-copy' ).on( 'click', function( e ) {
 			e.preventDefault();

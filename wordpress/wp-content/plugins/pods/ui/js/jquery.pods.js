@@ -155,6 +155,10 @@
                 $( 'form.pods-submittable' ).on( 'submit', function ( e ) {
                     var $submittable = $( this );
 
+					const podName = $submittable.data( 'pods-pod-name' );
+					const itemId = $submittable.data( 'pods-item-id' );
+					const formCounter = $submittable.data( 'pods-form-counter' );
+
                     pods_changed = false;
 
                     e.preventDefault();
@@ -216,11 +220,45 @@
                             	value = null;
 							}
 
+							// Fix for FormData converting arrays into comma-separated strings.
                             if ( null !== value ) {
-                                postdata.append( field_name, value );
+								if ( field_name.endsWith( '[]' ) && Array.isArray( value ) ) {
+									value.forEach( ( subvalue ) => {
+										postdata.append( field_name, subvalue );
+									} );
+								} else {
+									postdata.append( field_name, value );
+								}
+
                             }
                         }
                     } );
+
+					// Check for valid fields from DFV next.
+					if (
+						valid_form
+						&& '' !== podName
+						&& 'undefined' !== typeof podName
+						&& '' !== itemId
+						&& 'undefined' !== typeof itemId
+					) {
+						const dfvFields = window.PodsDFV.getFieldValuesWithConfigs( podName, itemId, formCounter );
+
+						// @todo Replace this with a future method like window.PodsDFV.getValidationMessagesForFields( podName, itemId, formCounter )
+						if ( dfvFields && Object.entries( dfvFields ) ) {
+							Object.entries( dfvFields ).forEach( ( [ fieldName, field ] ) => {
+								// Check for required fields.
+								let fieldRequired = field?.fieldConfig?.required ?? false;
+								let fieldValue = field?.value ?? '';
+
+								if ( Boolean( fieldRequired ) && '0' !== fieldRequired ) {
+									if ( '' === fieldValue || null === fieldValue || undefined === fieldValue ) {
+										valid_form = false;
+									}
+								}
+							} );
+						}
+					}
 
                     if ( 'undefined' != typeof pods_admin_submit_validation )
                         valid_form = pods_admin_submit_validation( valid_form, $submittable );
@@ -257,7 +295,6 @@
 						contentType: false,
 						processData: false,
                         success : function ( d ) {
-
                             // Attempt to parse what was returned as data
                             try {
                                 data = $.parseJSON( d );
@@ -270,9 +307,11 @@
 
                                 // Added for modal add/edit support.  If we get a valid JSON object, we assume we're modal
                                 if ( 'object' === typeof data && null !== data ) {
-
                                     // Phone home with the data
-                                    window.parent.jQuery( window.parent ).trigger('dfv:modal:update', data );
+									window.parent.postMessage( {
+										type: 'PODS_MESSAGE',
+										data: data,
+									}, window.location.origin );
                                 }
                                 else {
                                     id = d.match( /\d*$/, '' );

@@ -1,0 +1,16 @@
+{
+  "name": "marionetterna",
+  "version": "1.0.0",
+  "description": "![Dazzling WordPress Theme](https://cdn.colorlib.com/wp/wp-content/uploads/sites/2/screenshot.png \"Dazzling Theme Screenshot\")",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^4.0.2",
+    "gulp-sass": "^5.1.0",
+    "sass": "^1.49.8"
+  }
+}

@@ -191,6 +191,7 @@ class Pods_Templates_Auto_Template_Settings {
 			'pfat_append_single' => array(
 				'label'      => __( 'Singular Template Location', 'pods' ),
 				'help'       => __( 'Whether the template will go before, after or in place of the existing content.', 'pods' ),
+				'default'    => 'after',
 				'depends-on' => array( 'pfat_enable' => true ),
 				'excludes-on' => array( 'pfat_single' => '' ),
 			),
@@ -226,6 +227,7 @@ class Pods_Templates_Auto_Template_Settings {
 			'pfat_append_archive'   => array(
 				'label'      => __( 'List Template Location', 'pods' ),
 				'help'       => __( 'Whether the template will go before, after or in place of the existing content.', 'pods' ),
+				'default'    => 'after',
 				'depends-on' => array( 'pfat_enable' => true ),
 				'excludes-on' => array( 'pfat_archive' => '' ),
 			),
@@ -296,7 +298,7 @@ class Pods_Templates_Auto_Template_Settings {
 			'type'               => 'pick',
 			'pick_format_type'   => 'single',
 			'pick_format_single' => 'dropdown',
-			'default'            => 'true',
+			'default'            => '',
 		);
 
 		// get template titles
@@ -437,7 +439,7 @@ class Pods_Templates_Auto_Template_Settings {
 			if ( is_array( $archive_test ) ) {
 				foreach ( $archive_test as $label => $test ) {
 					if ( $test === 'fail' ) {
-						echo sprintf( '<div id="message" class="error"><p>%s</p></div>', sprintf( __( 'The Pods post type %1$s has an archive template set to be displayed using Pods auto template, but the Pod does not have an archive. You can enable post type archives in the "Advanced Options" tab.', 'pods' ), $label ) );
+						echo sprintf( '<div id="message" class="error"><p>%s</p></div>', sprintf( __( 'Your Custom Post Type "%1$s" has an archive template set to be displayed using in Auto Template Options, but the Post Type is not set to show archives. You can enable post type archives in the "Advanced Options" tab.', 'pods' ), $label ) );
 					}
 				}
 			}

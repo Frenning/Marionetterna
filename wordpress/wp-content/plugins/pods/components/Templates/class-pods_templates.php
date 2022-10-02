@@ -215,6 +215,7 @@ class Pods_Templates_Frontier {
 				'groups' => array(),
 			)
 		);
+
 		add_meta_box(
 			'pod_reference', __( 'Pod Reference', 'pods' ), array(
 				$this,
@@ -296,6 +297,10 @@ class Pods_Templates_Frontier {
 			delete_post_meta( $post->ID, $prefix );
 			add_post_meta( $post->ID, $prefix, $_POST[ $prefix ] );
 		}
+
+		// Clean the Pods Blocks cache so that any new/updated templates show up.
+		pods_transient_clear( 'pods_blocks' );
+		pods_transient_clear( 'pods_blocks_js' );
 	}
 
 	/**

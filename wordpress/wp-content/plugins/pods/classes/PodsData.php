@@ -50,6 +50,11 @@ class PodsData {
 	public static $display_errors = true;
 
 	/**
+	 * @var bool
+	 */
+	public $fetch_full = true;
+
+	/**
 	 * @var PodsAPI
 	 */
 	public $api = null;
@@ -389,7 +394,7 @@ class PodsData {
 		}
 
 		// Check for pod object.
-		if ( $table['pod'] instanceof Pod ) {
+		if ( ! empty( $table['pod'] ) && $table['pod'] instanceof Pod ) {
 			$this->pod_data = $table['pod'];
 		} else {
 			$this->table_info = $table;
@@ -1471,6 +1476,39 @@ class PodsData {
 
 			$joins = array();
 
+			$pre_traverse_args = [
+				'find'     => $find,
+				'replace'  => $replace,
+				'traverse' => $traverse,
+				'params'   => $params,
+			];
+
+			/**
+			 * Allow filtering the pre-traverse arguments that will be used to build the query.
+			 *
+			 * @since 2.8.14
+			 *
+			 * @param array    $pre_traverse_args The pre-traverse arguments.
+			 * @param PodsData $pods_data         The PodsData object.
+			 */
+			$pre_traverse_args = (array) apply_filters( 'pods_data_build_pre_traverse_args', $pre_traverse_args, $this );
+
+			if ( isset( $pre_traverse_args['find'] ) ) {
+				$find = $pre_traverse_args['find'];
+			}
+
+			if ( isset( $pre_traverse_args['replace'] ) ) {
+				$replace = $pre_traverse_args['replace'];
+			}
+
+			if ( isset( $pre_traverse_args['traverse'] ) ) {
+				$traverse = $pre_traverse_args['traverse'];
+			}
+
+			if ( isset( $pre_traverse_args['params'] ) ) {
+				$params = $pre_traverse_args['params'];
+			}
+
 			if ( ! empty( $find ) ) {
 				// See: "#3294 OrderBy Failing on PHP7"  Non-zero array keys.
 				// here in PHP 7 cause odd behavior so just strip the keys.
@@ -1992,7 +2030,7 @@ class PodsData {
 		 * @param bool     $fetch_full Whether to fetch the full row.
 		 * @param PodsData $pods_data  The PodsData object.
 		 */
-		$fetch_full = (bool) apply_filters( 'pods_data_fetch_full', true, $this );
+		$fetch_full = (bool) apply_filters( 'pods_data_fetch_full', $this->fetch_full, $this );
 
 		if ( $fetch_full && ( null !== $row || ( $this->pod_data && 'settings' === $this->pod_data['type'] ) ) ) {
 			if ( $explicit_set ) {
@@ -2002,8 +2040,8 @@ class PodsData {
 			$mode = 'id';
 			$id   = pods_absint( $row );
 
-			if ( ! is_numeric( $row ) || 0 === strpos( $row, '0' ) || (string) $row !== (string) preg_replace( '/[^0-9]/', '', $row ) ) {
-				if ( $this->id && is_numeric( $this->id ) ) {
+			if ( null !== $row && ( ! is_numeric( $row ) || 0 === strpos( $row, '0' ) || (string) $row !== (string) preg_replace( '/[^0-9]/', '', $row ) ) ) {
+				if ( 'settings' === $this->pod_data['type'] || ( $this->id && is_numeric( $this->id ) ) ) {
 					$id = $this->id;
 				} else {
 					$mode = 'slug';
@@ -2348,16 +2386,21 @@ class PodsData {
 		// Handle Preparations of Values (sprintf format).
 		if ( is_array( $sql ) ) {
 			if ( isset( $sql[0] ) && 1 < count( $sql ) ) {
+				$sql = array_values( $sql );
+
 				if ( 2 === count( $sql ) ) {
 					if ( ! is_array( $sql[1] ) ) {
-						$sql[1] = array( $sql[1] );
+						$sql[1] = [
+							$sql[1],
+						];
 					}
 
 					$params->sql = self::prepare( $sql[0], $sql[1] );
-				} elseif ( 3 === count( $sql ) ) {
-					$params->sql = self::prepare( $sql[0], array( $sql[1], $sql[2] ) );
 				} else {
-					$params->sql = self::prepare( $sql[0], array( $sql[1], $sql[2], $sql[3] ) );
+					$sql_query = array_shift( $sql );
+					$prepare   = $sql;
+
+					$params->sql = self::prepare( $sql_query, $prepare );
 				}
 			} else {
 				$params = (object) array_merge( get_object_vars( $params ), $sql );
@@ -2374,7 +2417,21 @@ class PodsData {
 		// Run Query.
 		$params->sql = apply_filters( 'pods_data_query', $params->sql, $params );
 
+		$wpdb_show_errors = null;
+
+		// Maybe disable wpdb errors.
+		if ( false === $params->error && ! empty( $wpdb->show_errors ) ) {
+			$wpdb_show_errors = false;
+
+			$wpdb->show_errors( false );
+		}
+
 		$result = $wpdb->query( $params->sql );
+
+		// Maybe show wpdb errors.
+		if ( $wpdb_show_errors ) {
+			$wpdb->show_errors( true );
+		}
 
 		$result = apply_filters( 'pods_data_query_result', $result, $params );
 
@@ -3466,7 +3523,7 @@ class PodsData {
 					LEFT JOIN `{$table_info['pod_table']}` AS `{$field_joined}` ON
 						`{$field_joined}`.`{$table_info['pod_field_id']}` = `{$traverse_recurse['rel_alias']}`.`{$joined_id}`
 				";
-			} elseif ( pods_podsrel_enabled() ) {
+			} elseif ( pods_podsrel_enabled( $the_field, 'lookup' ) ) {
 				if ( ( $traverse_recurse['depth'] + 2 ) === count( $traverse_recurse['fields'] ) && ( ! $is_pickable || ! in_array( $pick_object, $simple_tableless_objects, true ) ) && 'post_author' === $traverse_recurse['fields'][ $traverse_recurse['depth'] + 1 ] ) {
 					$table_info['recurse'] = false;
 				}
@@ -3485,6 +3542,39 @@ class PodsData {
 						LEFT JOIN `{$table_info[ 'table' ]}` AS `{$field_joined}` ON
 							`{$field_joined}`.`{$table_info[ 'field_id' ]}` = `{$rel_alias}`.`related_item_id`
 					";
+				}
+			} else {
+				$handle_join = [
+					'recurse'  => $table_info['recurse'],
+					'the_join' => null,
+				];
+
+				/**
+				 * Allow filtering the join parameters to be used for custom traversal logic.
+				 *
+				 * @since 2.8.14
+				 *
+				 * @param array    $handle_join The join parameters to set.
+				 * @param array    $args        The additional traverse recurse arguments.
+				 * @param PodsData $pods_data   The PodsData object.
+				 */
+				$handle_join = apply_filters( 'pods_data_traverse_recurse_handle_join', $handle_join, [
+					'traverse'         => $traverse,
+					'traverse_recurse' => $traverse_recurse,
+					'the_field'        => $the_field,
+					'table_info'       => $table_info,
+					'field_joined'     => $field_joined,
+					'rel_alias'        => $rel_alias,
+					'is_pickable'      => $is_pickable,
+					'pick_object'      => $pick_object,
+				], $this );
+
+				if ( null !== $handle_join['recurse'] ) {
+					$table_info['recurse'] = $handle_join['recurse'];
+				}
+
+				if ( null !== $handle_join['the_join'] ) {
+					$the_join = $handle_join['the_join'];
 				}
 			}//end if
 		} elseif ( 'meta' === $pod_data['storage'] ) {
@@ -3613,6 +3703,8 @@ class PodsData {
 	 * Get the complete sql
 	 *
 	 * @since 2.0.5
+	 *
+	 * @param string|array $sql The SQL query, optionally an array with the query first and the variables to prepare after that.
 	 */
 	public function get_sql( $sql = '' ) {
 

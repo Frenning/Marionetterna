@@ -2,7 +2,7 @@
 Contributors: Erik Terenius
 Tags: CogWork, MinaAktiviteter, Dans.se, shop, events, booking, registration, payment, customers, members
 Requires at least: 4.6
-Tested up to: 5.9
+Tested up to: 6.0
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -143,5 +143,6 @@ To include a list of products or bookable events you only need to write [cw shop
 = 1.7.5 =
 * Checked compatibility with WordPress 5.9
 
-
+= 1.7.6 =
+* Checked compatibility with WordPress 6.0
 

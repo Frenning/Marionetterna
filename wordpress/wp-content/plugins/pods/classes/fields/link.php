@@ -201,8 +201,16 @@ class PodsField_Link extends PodsField_Website {
 		$form_field_type = PodsForm::$field_type;
 		$field_type      = 'link';
 
+		$value = $this->normalize_value_for_input( $value, $options );
+
 		// Ensure proper format
-		$value = $this->pre_save( $value, $id, $name, $options, null, $pod );
+		if ( is_array( $value ) ) {
+			foreach ( $value as $k => $repeatable_value ) {
+				$value[ $k ] = $this->pre_save( $repeatable_value, $id, $name, $options, null, $pod );
+			}
+		} else {
+			$value = $this->pre_save( $value, $id, $name, $options, null, $pod );
+		}
 
 		pods_view( PODS_DIR . 'ui/fields/' . $field_type . '.php', compact( array_keys( get_defined_vars() ) ) );
 	}
@@ -289,9 +297,7 @@ class PodsField_Link extends PodsField_Website {
 	 * Init the editor needed for WP Link modal to work
 	 */
 	public function validate_link_modal() {
-		$static_cache = tribe( Static_Cache::class );
-
-		$init = (boolean) $static_cache->get( 'init', __METHOD__ );
+		$init = (boolean) pods_static_cache_get( 'init', __METHOD__ );
 
 		if ( $init ) {
 			return;
@@ -301,7 +307,7 @@ class PodsField_Link extends PodsField_Website {
 			add_action( 'shutdown', [ $this, 'add_link_modal' ] );
 		}
 
-		$static_cache->set( 'init', 1, __METHOD__ );
+		pods_static_cache_set( 'init', 1, __METHOD__ );
 	}
 
 	/**

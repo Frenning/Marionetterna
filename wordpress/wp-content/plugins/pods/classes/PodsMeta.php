@@ -241,13 +241,22 @@ class PodsMeta {
 	 *
 	 */
 	public static function enqueue() {
+		$type_map = [
+			'post_type' => 'post_types',
+			'taxonomy'  => 'taxonomies',
+			'setting'   => 'settings',
+		];
 
 		foreach ( self::$queue as $type => $objects ) {
-			foreach ( $objects as $pod_name => $pod ) {
-				pods_transient_set( 'pods_pod_' . $pod_name, $pod, WEEK_IN_SECONDS );
+			if ( isset( $type_map[ $type ] ) ) {
+				$type = $type_map[ $type ];
 			}
 
-			self::${$type} = array_merge( self::${$type}, $objects );
+			foreach ( $objects as $name => $object ) {
+				self::${$type}[ $name ] = $object;
+			}
+
+			unset( self::$queue[ $type ] );
 		}
 	}
 
@@ -696,7 +705,6 @@ class PodsMeta {
 
 			$defaults = array(
 				'name' => $name,
-				'type' => 'text'
 			);
 
 			$is_field_object = $field instanceof Field;
@@ -714,7 +722,7 @@ class PodsMeta {
 			$field['name'] = trim( $field['name'] );
 
 			if ( isset( $pod['fields'] ) && isset( $pod['fields'][ $field['name'] ] ) ) {
-				$is_field_hidden = (bool) pods_v( 'hidden', $field, 0 );
+				$is_field_hidden = 1 === (int) pods_v( 'hidden', $field, 0 );
 
 				$field = pods_config_merge_data( $pod['fields'][ $field['name'] ], $field );
 
@@ -726,6 +734,11 @@ class PodsMeta {
 				if ( ! $is_field_hidden && isset( $pod['fields'][ $field['name'] ]['hidden'] ) && 1 === (int) $pod['fields'][ $field['name'] ]['hidden'] ) {
                     $field['hidden'] = 0;
                 }
+			}
+
+			// Set the default type.
+			if ( empty( $field['type'] ) ) {
+				$field['type'] = 'text';
 			}
 
 			if ( empty( $field['label'] ) ) {
@@ -1106,7 +1119,7 @@ class PodsMeta {
 		$revisions_to_keep_limit = pods_v( 'revisions_to_keep_limit', $pod->pod_data );
 
 		// Check if we have a valid limit.
-		if ( ! is_numeric( $revisions_to_keep_limit ) ) {
+		if ( ! is_numeric( $revisions_to_keep_limit ) || 0 === (int) $revisions_to_keep_limit ) {
 			return $num;
 		}
 
@@ -1161,10 +1174,12 @@ class PodsMeta {
 		pods_form_enqueue_style( 'pods-form' );
 		pods_form_enqueue_script( 'pods' );
 
-		$pod_type = 'post';
+		$pod_type      = 'post_type';
+		$pod_meta_type = 'post';
 
 		if ( 'attachment' == $post->post_type ) {
-			$pod_type = 'media';
+			$pod_type      = 'media';
+			$pod_meta_type = 'media';
 		}
 
 		do_action( 'pods_meta_meta_post', $post );
@@ -1175,7 +1190,7 @@ class PodsMeta {
 			$id = $post->ID;
 		}
 
-		$pod = $this->maybe_set_up_pod( $metabox['args']['group']['pod']['name'], $id, 'post_type' );
+		$pod = $this->maybe_set_up_pod( $metabox['args']['group']['pod']['name'], $id, $pod_type );
 
 		$fields = $metabox['args']['group']['fields'];
 
@@ -1198,7 +1213,7 @@ class PodsMeta {
 			return;
 		}
 
-		echo PodsForm::field( 'pods_meta', wp_create_nonce( 'pods_meta_' . $pod_type ), 'hidden' );
+		echo PodsForm::field( 'pods_meta', wp_create_nonce( 'pods_meta_' . $pod_meta_type ), 'hidden' );
 		?>
 		<table class="form-table pods-metabox pods-admin pods-dependency">
 			<?php
@@ -1206,13 +1221,14 @@ class PodsMeta {
 			$field_row_classes = 'form-field pods-field-input';
 			$th_scope          = 'row';
 
-			$value_callback = static function( $field_name, $id, $field, $pod ) {
-				pods_no_conflict_on( 'post' );
+			$value_callback = static function( $field_name, $id, $field, $pod ) use ( $pod_meta_type ) {
+				pods_no_conflict_on( $pod_meta_type );
 
 				$value = null;
 
 				if ( ! empty( $pod ) ) {
-					$value = $pod->field( [ 'name' => $field['name'], 'in_form' => true, 'single' => true ] );
+					/** @var Pods $pod */
+					$value = $pod->field( [ 'name' => $field['name'], 'in_form' => true ] );
 				} elseif ( ! empty( $id ) ) {
 					$value = get_post_meta( $id, $field['name'], true );
 				}
@@ -1226,7 +1242,7 @@ class PodsMeta {
 					}
 				}
 
-				pods_no_conflict_off( 'post' );
+				pods_no_conflict_off( $pod_meta_type );
 
 				return $value;
 			};
@@ -1382,7 +1398,7 @@ class PodsMeta {
 					}
 
 					if ( ! pods_permission( $field ) ) {
-						if ( ! pods_v( 'hidden', $field, false ) ) {
+						if ( 1 !== (int) pods_v( 'hidden', $field, 0 ) ) {
 							continue;
 						}
 					}
@@ -1391,6 +1407,10 @@ class PodsMeta {
 
 					if ( isset( $_POST[ 'pods_meta_' . $field['name'] ] ) ) {
 						$data[ $field['name'] ] = $_POST[ 'pods_meta_' . $field['name'] ];
+					}
+
+					if ( 'boolean' === $field['type'] ) {
+						$data[ $field['name'] ] = (int) $data[ $field['name'] ];
 					}
 				}
 			}
@@ -1486,6 +1506,8 @@ class PodsMeta {
 
 		$meta_nonce = PodsForm::field( 'pods_meta', wp_create_nonce( 'pods_meta_media' ), 'hidden' );
 
+		$did_init = false;
+
 		foreach ( $groups as $group ) {
 			if ( empty( $group['fields'] ) ) {
 				continue;
@@ -1499,11 +1521,9 @@ class PodsMeta {
 				$pod = $this->maybe_set_up_pod( $group['pod']['name'], $id, 'media' );
 			}
 
-			$did_init = false;
-
 			foreach ( $group['fields'] as $field ) {
 				if ( ! pods_permission( $field ) ) {
-					if ( ! pods_var( 'hidden', $field, false ) ) {
+					if ( 1 !== (int) pods_v( 'hidden', $field, 0 ) ) {
 						continue;
 					}
 				}
@@ -2105,7 +2125,7 @@ class PodsMeta {
 					}
 
 					if ( ! pods_permission( $field ) ) {
-						if ( ! pods_v( 'hidden', $field, false ) ) {
+						if ( 1 !== (int) pods_v( 'hidden', $field, 0 ) ) {
 							continue;
 						}
 					}
@@ -2255,7 +2275,7 @@ class PodsMeta {
 			};
 
 			foreach ( $fields as $field ) {
-				$hidden_field = (boolean) pods_v( 'hidden', $field, false );
+				$hidden_field = 1 === (int) pods_v( 'hidden', $field, 0 );
 
 				if (
 					! pods_permission( $field )
@@ -2331,7 +2351,7 @@ class PodsMeta {
 
 			foreach ( $group['fields'] as $field ) {
 				if ( ! PodsForm::permission( $field ) ) {
-					if ( pods_v( 'hidden', $field, false ) ) {
+					if ( 1 === (int) pods_v( 'hidden', $field, 0 ) ) {
 						$field_found = true;
 						break;
 					} else {
@@ -2749,14 +2769,26 @@ class PodsMeta {
 				'customize_changeset' => true,
 				'oembed_cache'        => true,
 				'user_request'        => true,
+				'wp_block'            => true,
+				'wp_global_styles'    => true,
+				'wp_navigation'       => true,
 				'wp_template'         => true,
+				'wp_template_part'    => true,
+				// Disable Beaver Builder post types.
 				'fl-theme-layout'     => true,
 				'fl-builder-template' => true,
+				// Disable Performance Monitor post types (loaded by Nexcess).
+				'pm_report'           => true,
+				'pm_page'             => true,
+				'pm_site_change'      => true,
+				'pm_insight'          => true,
 			],
 			'taxonomy'  => [
 				'nav_menu'                     => true,
 				'post_format'                  => true,
 				'wp_theme'                     => true,
+				'wp_template_part_area'        => true,
+				// Disable Beaver Builder taxonomies.
 				'fl-builder-template-category' => true,
 				'fl-builder-template-type'     => true,
 			],
@@ -2815,10 +2847,8 @@ class PodsMeta {
 			$cached_is_key_covered = pods_cache_get( $type . '/' . $object_name, __CLASS__ . '/is_key_covered' );
 
 			if ( '404' !== $cached_is_key_covered ) {
-				$static_cache = tribe( Static_Cache::class );
-
 				// Check if object type/name/key is not covered.
-				$cached_is_key_covered = $static_cache->get( $type . '/' . $object_name . '/' . $key, __CLASS__ . '/is_key_covered' );
+				$cached_is_key_covered = pods_static_cache_get( $type . '/' . $object_name . '/' . $key, __CLASS__ . '/is_key_covered' );
 			}
 
 			if ( '404' === $cached_is_key_covered ) {
@@ -3601,11 +3631,13 @@ class PodsMeta {
 
 		// Return first created by Pods, save extended for later
 		foreach ( $objects as $pod ) {
-			if ( $object_name === $pod['object'] ) {
+			$pod_object = pods_v( 'object', $pod );
+
+			if ( $object_name === $pod_object ) {
 				$recheck[] = $pod;
 			}
 
-			if ( '' === $pod['object'] && $object_name === $pod['name'] ) {
+			if ( '' === $pod_object && $object_name === $pod['name'] ) {
 				return $pod;
 			}
 		}
@@ -3628,6 +3660,23 @@ class PodsMeta {
 	 * @return array|bool|int|mixed|null|string|void
 	 */
 	public function get_meta( $object_type, $_null = null, $object_id = 0, $meta_key = '', $single = false ) {
+		$metadata_integration = (int) pods_get_setting( 'metadata_integration', 1 );
+
+		// Only continue if metadata is integrated with.
+		if ( 0 === $metadata_integration ) {
+			return $_null;
+		}
+
+		$first_pods_version = get_option( 'pods_framework_version_first' );
+		$first_pods_version = '' === $first_pods_version ? PODS_VERSION : $first_pods_version;
+
+		$metadata_override_get = (int) pods_get_setting( 'metadata_override_get', version_compare( $first_pods_version, '2.8.21', '<=' ) ? 1 : 0 );
+
+		// Only continue if metadata is overridden.
+		if ( 0 === $metadata_override_get ) {
+			return $_null;
+		}
+
 		// Enforce boolean as it can be a string sometimes
 		$single = filter_var( $single, FILTER_VALIDATE_BOOLEAN );
 
@@ -3721,8 +3770,7 @@ class PodsMeta {
 			}
 
 			if ( $meta_key ) {
-				$static_cache = tribe( Static_Cache::class );
-				$static_cache->set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
+				pods_static_cache_set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
 			}
 
 			if ( ! $no_conflict ) {
@@ -3867,6 +3915,13 @@ class PodsMeta {
 			return $_null;
 		}
 
+		$metadata_integration = (int) pods_get_setting( 'metadata_integration', 1 );
+
+		// Only continue if metadata is integrated with.
+		if ( 0 === $metadata_integration ) {
+			return $_null;
+		}
+
 		if ( in_array( $object_type, array( 'post', 'post_type', 'media' ) ) ) {
 			$object_name = get_post_type( $object_id );
 		} elseif ( 'taxonomy' == $object_type ) {
@@ -3920,8 +3975,7 @@ class PodsMeta {
 			}
 
 			if ( $meta_key ) {
-				$static_cache = tribe( Static_Cache::class );
-				$static_cache->set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
+				pods_static_cache_set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
 			}
 
 			return $_null;
@@ -3982,6 +4036,13 @@ class PodsMeta {
 			return $_null;
 		}
 
+		$metadata_integration = (int) pods_get_setting( 'metadata_integration', 1 );
+
+		// Only continue if metadata is integrated with.
+		if ( 0 === $metadata_integration ) {
+			return $_null;
+		}
+
 		if ( in_array( $object_type, array( 'post', 'post_type', 'media' ) ) ) {
 			$object_name = get_post_type( $object_id );
 		} elseif ( 'taxonomy' == $object_type ) {
@@ -4035,8 +4096,7 @@ class PodsMeta {
 			}
 
 			if ( $meta_key ) {
-				$static_cache = tribe( Static_Cache::class );
-				$static_cache->set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
+				pods_static_cache_set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
 			}
 
 			return $_null;
@@ -4096,6 +4156,13 @@ class PodsMeta {
 	 * @return bool|int|null
 	 */
 	public function update_meta_by_id( $object_type, $_null = null, $meta_id = 0, $meta_key = '', $meta_value = '' ) {
+		$metadata_integration = (int) pods_get_setting( 'metadata_integration', 1 );
+
+		// Only continue if metadata is integrated with.
+		if ( 0 === $metadata_integration ) {
+			return $_null;
+		}
+
 		$meta_type = 'post_type' === $object_type ? 'post' : $object_type;
 
 		// Get the original meta record.
@@ -4126,6 +4193,13 @@ class PodsMeta {
 	 */
 	public function delete_meta( $object_type, $_null = null, $object_id = 0, $meta_key = '', $meta_value = '', $delete_all = false ) {
 		if ( pods_tableless() ) {
+			return $_null;
+		}
+
+		$metadata_integration = (int) pods_get_setting( 'metadata_integration', 1 );
+
+		// Only continue if metadata is integrated with.
+		if ( 0 === $metadata_integration ) {
 			return $_null;
 		}
 
@@ -4182,8 +4256,7 @@ class PodsMeta {
 			}
 
 			if ( $meta_key ) {
-				$static_cache = tribe( Static_Cache::class );
-				$static_cache->set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
+				pods_static_cache_set( $object_type . '/' . $object_name . '/' . $meta_key, '404', __CLASS__ . '/is_key_covered' );
 			}
 
 			return $_null;
@@ -4242,6 +4315,13 @@ class PodsMeta {
 	 * @return bool|int|null
 	 */
 	public function delete_meta_by_id( $object_type, $_null = null, $meta_id = 0 ) {
+		$metadata_integration = (int) pods_get_setting( 'metadata_integration', 1 );
+
+		// Only continue if metadata is integrated with.
+		if ( 0 === $metadata_integration ) {
+			return $_null;
+		}
+
 		$meta_type = 'post_type' === $object_type ? 'post' : $object_type;
 
 		// Get the original meta record.
@@ -4312,11 +4392,8 @@ class PodsMeta {
 	 * @param string $taxonomy         Taxonomy for the split term.
 	 */
 	public static function split_shared_term( $term_id, $new_term_id, $term_taxonomy_id, $taxonomy ) {
-
-
 		$term_splitting = new Pods_Term_Splitting( $term_id, $new_term_id, $taxonomy );
 		$term_splitting->split_shared_term();
-
 	}
 
 	/**
@@ -4325,7 +4402,6 @@ class PodsMeta {
 	 * @return bool
 	 */
 	public function delete_user( $id ) {
-
 		return $this->delete_object( 'user', $id );
 	}
 
@@ -4335,7 +4411,6 @@ class PodsMeta {
 	 * @return bool
 	 */
 	public function delete_comment( $id ) {
-
 		return $this->delete_object( 'comment', $id );
 	}
 
@@ -4357,7 +4432,6 @@ class PodsMeta {
 	 * @return bool
 	 */
 	public function delete_object( $type, $id, $name = null ) {
-
 		if ( empty( $name ) ) {
 			$name = $type;
 		}
