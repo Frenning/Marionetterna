@@ -59,20 +59,10 @@
 .navbar > .container .navbar-brand {
     color: #DAA520;
     font-size: 24px;
-    &:hover {
-        color: #2c2615;
-    }
 }
 
 .navbar-nav > {
-    li > {
-        .dropdown-menu {
-            padding: 0;
-            margin-top: 0px;
-            background: rgba(34,34,34,.9);
-            border-radius: 0px 0px 5px 5px;
-        }
-        
+    li > {       
         a {
             position: relative;
             display: block;
@@ -81,6 +71,26 @@
             line-height: 30px; 
         } 
     } 
+}
+
+.dropdown-menu {
+    padding: 0;
+    margin-top: 0px;
+    background: rgba(34,34,34,.9);
+    border-radius: 0px 0px 5px 5px;
+    border-bottom: none;
+    font-size: 14px;
+    li {
+        a {
+            display: block;
+            padding: 14px 20px;
+            clear: both;
+            white-space:  nowrap;        
+        }     
+    }     
+    .active > a {
+        border: none;
+    }
 }
 
 .navbar-collapse {
@@ -99,31 +109,6 @@
     .open .dropdown-menu {
         display: block;
     }
-}
-
-.dropdown-menu {
-    li {
-        a {
-            display: block;
-            padding: 14px 20px;
-            clear: both;
-            color: #DAA520;
-            white-space:  nowrap;
-            &:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-                color: #2c2615;            
-            }          
-        }     
-    }     
-    .active > a {
-        border: none;
-        color: #2c2615;
-        &:hover, &:focus {
-            border: none;
-        }
-    }
-    border-bottom: none;
-    font-size: 14px;
 }
 
 .dropdown-menu .divider {

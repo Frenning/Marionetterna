@@ -11,12 +11,18 @@
  * @package dazzling
  */
 
-get_header(); ?>	 
-<div id="primary" class="content-area col-sm-12 col-md-9">
-	<div class="content-inside col-md-12">
-		<h1><?php the_title();?></h1>
-		<p><?php echo (the_content());?></p>
-	</div><!--content-inside-->
-</div><!-- #primary -->
-<?php get_sidebar(); ?>
+get_header(); ?>
+</div><!-- close .row -->
+</div><!-- close .container -->
+<div class="row">
+  <div id="primary" class="col-md-12">
+    <div class="pageContent col-md-6">
+      <h1><?php the_title();?></h1>
+      <p><?php echo (the_content());?></p>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <?php get_sidebar();?>
+</div>
 <?php get_footer(); ?>

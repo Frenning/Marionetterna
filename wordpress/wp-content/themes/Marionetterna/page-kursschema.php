@@ -4,8 +4,8 @@
 */
 
 get_header(); ?>
-<div id="primary" class="content-area col-sm-12 col-md-9">
-	<div class="content-inside col-md-12">
+<div id="primary" class="col-sm-12">
+	<div class="content-inside col-sm-9">
 		<h1>Kursschema</h1>
 		<?php 
 		//readfile("https://dans.se/tools/reg/?lang=sv&org=marionetterna;cat=0;format=htmlBody"); 

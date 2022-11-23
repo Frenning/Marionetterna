@@ -5,7 +5,7 @@
  * @package dazzling
  */
 ?>
-        </div><!-- close .site-content -->
+</div><!-- close .site-content -->
 	<div id="footer-area">
 		<div id="colophon">
 			<div class="container">

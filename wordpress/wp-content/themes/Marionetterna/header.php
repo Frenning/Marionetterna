@@ -27,15 +27,11 @@
 	<nav class="navbar navbar-default" role="navigation">
 		<div class="container">
 			<div class="navbar-header">
-
 				<div id="logo">
-
 					<!--<?php echo is_home() ?  '<h1 class="site-title">' : '<span class="site-title">'; ?> -->
 						<a class="navbar-brand" href="<?php echo esc_url( home_url( '/' ) ); ?>"><img class="logo" src="<?php bloginfo('template_directory'); ?>/assets/images/logo_50x50.png" alt="" /> <title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home"><?php bloginfo( 'name' ); ?></a>
 					<!--<?php echo is_home() ?  '</h1>' : '</span>'; ?> end of .site-name -->
-
 				</div><!-- end of #logo -->
-						
 			</div>
 			<?php 
 				// TODO: replace dazzling header
@@ -47,21 +43,19 @@
 					<span class="hamburger-inner"></span>
 				</span>
 			</button>
-
 		</div>
 	</nav><!-- .site-navigation -->
 	<div id="content" class="site-content">		
-		<div class="container">
-			<?php
-				global $post;
-				if( get_post_meta($post->ID, 'site_layout', true) ){
-						$layout_class = get_post_meta($post->ID, 'site_layout', true);
-				}
-				else{
-						$layout_class = of_get_option( 'site_layout' );
-				}
-				if( is_home() && is_sticky( $post->ID ) ){
-						$layout_class = of_get_option( 'site_layout' );
-				}
-			?>
-			<div class="row <?php echo $layout_class; ?>">
+		<?php
+			global $post;
+			if( get_post_meta($post->ID, 'site_layout', true) ){
+					$layout_class = get_post_meta($post->ID, 'site_layout', true);
+			}
+			else{
+					$layout_class = of_get_option( 'site_layout' );
+			}
+			if( is_home() && is_sticky( $post->ID ) ){
+					$layout_class = of_get_option( 'site_layout' );
+			}
+		?>
+		<div class="row <?php echo $layout_class; ?>">
