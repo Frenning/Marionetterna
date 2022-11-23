@@ -20,10 +20,10 @@
           </div>
         <?php } ?>
         <?php $kursURL = get_permalink(get_page_by_title('Kursschema'))?>
+        <button class="frontPageButton">
+          <a href="<?php echo $kursURL?>">Gå till kursschema!</a>
+        </button>  
       </div>
-      <button class="frontPageButton">
-        <a href="<?php echo $kursURL?>">Gå till kursschema!</a>
-      </button>  
     </div><!--frontPageContent-->  
   </div><!-- #primary -->
 </div><!-- close .row -->

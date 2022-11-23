@@ -51,7 +51,8 @@ body {
   }
 
   button {
-    background-color: #000;
+    background-color: #FFFE;
+    border-radius: 10px;
     &::-moz-focus-inner {
       /* Corrects inner padding and border displayed oddly in FF3/4 www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ */
       border: 0;
@@ -81,29 +82,29 @@ body {
   }
   
   h1, .h1 {
-    color: #333;
+    color: #FFFE;
     font-size: 42px;
     padding: 10px 0px 10px 0px;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid white;
   }
   
   h2, .h2 {
-    color: #444;
+    color: #EEEE;
     font-size: 28px;
   }
   
   h3, .h3 {
-    color:#555;
+    color:#DDDE;
     font-size: 24px;
   }
   
   h4, .h4 {
-    color: #666;
+    color: #CCCE;
     font-size: 18px;
   }
   
   h5, .h5 {
-    color: #777;
+    color: #BBBE;
     font-size: 16px;
     font-weight: bold;
     margin-top: 5px;
@@ -111,9 +112,13 @@ body {
   }
   
   h6, .h6 {
-    color: #888;
+    color: #AAAE;
     font-size: 14px;
     margin: 0px;
+  }
+
+  p, li {
+    color: #EEEE;
   }
   
   img {
@@ -179,18 +184,17 @@ body {
   }
 
   #primary {
-    background-color: #FFFE;
+    background-color: #000E;
     min-height: 1020px;
     padding-bottom: 5px;
     position: relative;
   }
 
   #secondary {
-    background-color: #FFF;
+    background-color: #FFFE;
   }
 
   .frontPageContent {
-    background-color: #FFFE;
     height: fit-content;
     position: absolute;
     top: 25%;
@@ -219,7 +223,6 @@ body {
   }
 
   .pageContent {
-    background-color: #FFFE;
     margin: auto;
     clear: both;
   }
@@ -238,7 +241,7 @@ body {
 
   .post-area {
     width: fit-content;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid white;
     min-height: 50px;
     margin: auto;
   }
@@ -258,10 +261,11 @@ body {
   .fp-posts {
     border-top: solid #666 1px;
     padding-top: 10px;
-  }
-  .fp-posts:first-child {
-    border: none;
-    padding-top: 0px;
+    font-size: 16px;
+    &:first-child {
+      border: none;
+      padding-top: 0px;
+    }
   }
 
   /* Alignment */
@@ -289,7 +293,7 @@ body {
   ----------------------------------------------- */
   
   #sidebar {
-    background-color: #FFFB;
+    background-color: #000B;
   }
 
   .widget {
