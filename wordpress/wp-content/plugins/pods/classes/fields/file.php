@@ -80,6 +80,7 @@ class PodsField_File extends PodsField {
 					'single' => __( 'Single File', 'pods' ),
 					'multi'  => __( 'Multiple Files', 'pods' ),
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency' => true,
 			),
@@ -95,6 +96,7 @@ class PodsField_File extends PodsField {
 						'plupload'   => __( 'Upload only (Plupload)', 'pods' ),
 					)
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency' => true,
 			),
@@ -126,6 +128,7 @@ class PodsField_File extends PodsField {
 						],
 					]
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency' => true,
 			),
@@ -148,6 +151,7 @@ class PodsField_File extends PodsField {
 					'upload' => __( 'Upload File', 'pods' ),
 					'browse' => __( 'Media Library', 'pods' ),
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 			),
 			static::$type . '_upload_dir'             => array(
@@ -159,6 +163,7 @@ class PodsField_File extends PodsField {
 					'wp'      => __( 'WordPress Default', 'pods' ) . ' (/wp-content/uploads/yyyy/mm/)',
 					'uploads' => __( 'Custom directory within the default uploads directory', 'pods' ),
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'depends-on' => array( static::$type . '_uploader' => 'plupload' ),
 				'dependency' => true,
@@ -229,6 +234,7 @@ class PodsField_File extends PodsField {
 						'tiles' => __( 'Tiles', 'pods' ),
 					)
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 			),
 			static::$type . '_add_button'             => array(
@@ -272,6 +278,7 @@ class PodsField_File extends PodsField {
 					'file' => __( 'Media File', 'pods' ),
 					'none' => __( 'None', 'pods' ),
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 			),
 			static::$type . '_wp_gallery_columns'     => array(
@@ -290,6 +297,7 @@ class PodsField_File extends PodsField {
 					'8' => '8',
 					'9' => '9',
 				),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 			),
 			static::$type . '_wp_gallery_random_sort' => array(
@@ -303,6 +311,7 @@ class PodsField_File extends PodsField {
 				'type'       => 'pick',
 				'default'    => 'thumbnail',
 				'data'       => $this->data_image_sizes(),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 			),
 		);
@@ -406,6 +415,11 @@ class PodsField_File extends PodsField {
 		wp_enqueue_media();
 
 		wp_enqueue_script( 'pods-i18n' );
+
+		// To be further refactored later when we remove jQuery dependency and this field is fully React.
+		wp_enqueue_script( 'jquery' );
+		wp_enqueue_script( 'jquery-ui-core' );
+		wp_enqueue_script( 'jquery-ui-sortable' );
 
 		// Ensure the media library is initialized
 		$this->render_input_script( $args );
@@ -661,36 +675,46 @@ class PodsField_File extends PodsField {
 		$value = array_unique( array_filter( $value ), SORT_REGULAR );
 
 		// Handle File title saving.
-		foreach ( $value as $id ) {
+		foreach ( $value as $attachment_id ) {
 			$title = false;
 
-			if ( is_array( $id ) ) {
-				if ( isset( $id['title'] ) && 0 < strlen( trim( $id['title'] ) ) ) {
-					$title = trim( $id['title'] );
+			if ( is_array( $attachment_id ) ) {
+				if ( isset( $attachment_id['title'] ) && 0 < strlen( trim( $attachment_id['title'] ) ) ) {
+					$title = trim( $attachment_id['title'] );
 				}
 
-				if ( isset( $id['id'] ) ) {
-					$id = (int) $id['id'];
+				if ( isset( $attachment_id['id'] ) ) {
+					$attachment_id = (int) $attachment_id['id'];
 				} else {
-					$id = 0;
+					$attachment_id = 0;
 				}
 			}
 
-			if ( empty( $id ) ) {
+			if ( empty( $attachment_id ) ) {
 				continue;
 			}
 
 			$attachment      = null;
 			$attachment_data = array();
 
+			$attachment = get_post( $attachment_id );
+
+			if ( ! $attachment ) {
+				continue;
+			}
+
 			// Update the title if set.
-			if ( false !== $title && 1 === (int) pods_v( static::$type . '_edit_title', $options, 0 ) ) {
+			if (
+				false !== $title
+				&& 1 === (int) pods_v( static::$type . '_edit_title', $options, 0 )
+				&& $attachment->post_title !== $title
+			) {
 				$attachment_data['post_title'] = $title;
 			}
 
 			// Update attachment parent if it's not set yet and we're updating a post.
 			if ( ! empty( $params->id ) && ! empty( $pod['type'] ) && 'post_type' === $pod['type'] ) {
-				$attachment = get_post( $id );
+				$attachment = get_post( $attachment_id );
 
 				if ( isset( $attachment->post_parent ) && 0 === (int) $attachment->post_parent ) {
 					$attachment_data['post_parent'] = (int) $params->id;
@@ -699,7 +723,7 @@ class PodsField_File extends PodsField {
 
 			// Update the attachment if it the data array is not still empty.
 			if ( ! empty( $attachment_data ) ) {
-				$attachment_data['ID'] = $id;
+				$attachment_data['ID'] = $attachment_id;
 
 				if ( $attachment ) {
 					// Add post type to trigger attachment update filters from other plugins.
@@ -1171,7 +1195,7 @@ class PodsField_File extends PodsField {
 				}
 			}//end if
 
-			$custom_handler = apply_filters( 'pods_upload_handle', null, 'Filedata', $params->item_id, $params, $field );
+			$custom_handler = apply_filters( 'pods_upload_handle', null, 'Filedata', $params->post_id, $params, $field );
 
 			if ( null === $custom_handler ) {
 
@@ -1182,8 +1206,8 @@ class PodsField_File extends PodsField {
 					$custom_dir  = pods_v( $field['type'] . '_upload_dir_custom', $field, '' );
 					$context_pod = null;
 
-					if ( $params->item_id ) {
-						$context_pod = pods( pods_v( 'name', $pod, false ), $params->item_id );
+					if ( $params->post_id ) {
+						$context_pod = pods_get_instance( pods_v( 'name', $pod, false ), $params->post_id );
 
 						if ( ! $context_pod->exists() ) {
 							$context_pod = null;
@@ -1223,13 +1247,7 @@ class PodsField_File extends PodsField {
 				}
 
 				// Upload file.
-				$post_id = 0;
-
-				if ( 'post_type' === pods_v( 'type', $pod, null ) ) {
-					$post_id = $params->item_id;
-				}
-
-				$attachment_id = media_handle_upload( 'Filedata', $post_id );
+				$attachment_id = media_handle_upload( 'Filedata', $params->post_id );
 
 				// End custom directory.
 				if ( 'wp' !== $upload_dir ) {

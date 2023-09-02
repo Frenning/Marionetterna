@@ -2,14 +2,14 @@
 
 namespace Pods;
 
-use tad_DI52_ServiceProvider;
+use PodsMeta;
 
 /**
  * Class Service_Provider
  *
  * @since 2.8.0
  */
-class Service_Provider extends tad_DI52_ServiceProvider {
+class Service_Provider extends \Pods\Service_Provider_Base {
 
 	/**
 	 * Registers the classes and functionality needed.
@@ -24,6 +24,8 @@ class Service_Provider extends tad_DI52_ServiceProvider {
 		$this->container->singleton( Data\Map_Field_Values::class, Data\Map_Field_Values::class );
 		$this->container->singleton( Theme\WP_Query_Integration::class, Theme\WP_Query_Integration::class );
 		$this->container->singleton( Tools\Repair::class, Tools\Repair::class );
+		$this->container->singleton( Tools\Reset::class, Tools\Reset::class );
+		$this->container->singleton( PodsMeta::class, PodsMeta::class );
 
 		$this->hooks();
 	}

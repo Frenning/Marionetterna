@@ -152,6 +152,8 @@ class PodsField_Pick extends PodsField {
 
 		$simple_objects = $this->simple_objects();
 
+		$slow_text = __( '(may be slow for large data sets)', 'pods' );
+
 		$options = [
 			static::$type . '_format_type'              => [
 				'label'                 => __( 'Selection Type', 'pods' ),
@@ -163,6 +165,7 @@ class PodsField_Pick extends PodsField {
 					'single' => __( 'Single Select', 'pods' ),
 					'multi'  => __( 'Multiple Select', 'pods' ),
 				],
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency'            => true,
 			],
@@ -176,13 +179,33 @@ class PodsField_Pick extends PodsField {
 				'required'              => true,
 				'type'                  => 'pick',
 				'data'                  => apply_filters( 'pods_form_ui_field_pick_format_single_options', [
-					'dropdown'     => __( 'Drop Down', 'pods' ),
-					'radio'        => __( 'Radio Buttons', 'pods' ),
+					'dropdown'     => __( 'Drop Down', 'pods' ) . ' ' . $slow_text,
+					'radio'        => __( 'Radio Buttons', 'pods' ) . ' ' . $slow_text,
 					'autocomplete' => __( 'Autocomplete', 'pods' ),
 					'list'         => __( 'List View (single value)', 'pods' ),
 				] ),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency'            => true,
+			],
+			static::$type . '_format_single_help'         => [
+				'label'             => '',
+				'type'              => 'html',
+				'default'           => 0,
+				'html_content'      => '<p><em>' . esc_html__( 'Please note: When relating to dynamic content with large amounts of data, Drop Down or Radio Buttons can cause the edit screen to load very slowly because it loads all data at once. Consider using the Autocomplete or List View instead.', 'pods' ) . '</em></p>',
+				'dependency'        => true,
+				'wildcard-on' => [
+					static::$type . '_format_single' => [
+						'^dropdown$',
+						'^radio$',
+					],
+					static::$type . '_object' => [
+						'^post_type-(?!(custom_css|customize_changeset)).*$',
+						'^taxonomy-.*$',
+						'^user$',
+						'^pod-.*$',
+					],
+				],
 			],
 			static::$type . '_format_multi'             => [
 				'label'                 => __( 'Input Type', 'pods' ),
@@ -194,13 +217,33 @@ class PodsField_Pick extends PodsField {
 				'required'              => true,
 				'type'                  => 'pick',
 				'data'                  => apply_filters( 'pods_form_ui_field_pick_format_multi_options', [
-					'checkbox'     => __( 'Checkboxes', 'pods' ),
-					'multiselect'  => __( 'Multi Select (basic selection)', 'pods' ),
+					'checkbox'     => __( 'Checkboxes', 'pods' ) . ' ' . $slow_text,
+					'multiselect'  => __( 'Multi Select (basic selection)', 'pods' ) . ' ' . $slow_text,
 					'autocomplete' => __( 'Autocomplete', 'pods' ),
 					'list'         => __( 'List View (with reordering)', 'pods' ),
 				] ),
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency'            => true,
+			],
+			static::$type . '_format_multi_help'         => [
+				'label'             => '',
+				'type'              => 'html',
+				'default'           => 0,
+				'html_content'      => '<p><em>' . esc_html__( 'Please note: When relating to dynamic content with large amounts of data, Checkboxes or Multi Select can cause the edit screen to load very slowly because it loads all data at once. Consider using the Autocomplete or List View instead.', 'pods' ) . '</em></p>',
+				'dependency'        => true,
+				'wildcard-on' => [
+					static::$type . '_format_multi' => [
+						'^checkbox$',
+						'^multiselect$',
+					],
+					static::$type . '_object' => [
+						'^post_type-(?!(custom_css|customize_changeset)).*$',
+						'^taxonomy-.*$',
+						'^user$',
+						'^pod-.*$',
+					],
+				],
 			],
 			static::$type . '_display_format_multi'     => [
 				'label'                 => __( 'Display Format', 'pods' ),
@@ -216,6 +259,7 @@ class PodsField_Pick extends PodsField {
 					'non_serial' => __( 'Item 1, Item 2 and Item 3', 'pods' ),
 					'custom'     => __( 'Custom separator (without "and")', 'pods' ),
 				],
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency'            => true,
 			],
@@ -362,6 +406,7 @@ class PodsField_Pick extends PodsField {
 				'type'             => 'pick',
 				'pick_object'      => 'role',
 				'pick_format_type' => 'multi',
+				'pick_format_multi' => 'autocomplete',
 				'depends-on'       => [
 					static::$type . '_object' => 'user',
 				],
@@ -405,7 +450,7 @@ class PodsField_Pick extends PodsField {
 			'label'            => __( 'Limit list by Post Status', 'pods' ),
 			'help'             => __( 'You can choose to limit Posts available for selection by one or more specific post status.', 'pods' ),
 			'type'             => 'pick',
-			'pick_object'      => 'post-status',
+			'pick_object'      => 'post-status-with-any',
 			'pick_format_type' => 'multi',
 			'default'          => 'publish',
 			'depends-on'       => [
@@ -684,6 +729,13 @@ class PodsField_Pick extends PodsField {
 				'group'         => __( 'Other WP Objects', 'pods' ),
 				'simple'        => true,
 				'data_callback' => array( $this, 'data_post_stati' ),
+			);
+
+			self::$related_objects['post-status-with-any'] = array(
+				'label'         => __( 'Post Status (with any)', 'pods' ),
+				'group'         => __( 'Other WP Objects', 'pods' ),
+				'simple'        => true,
+				'data_callback' => array( $this, 'data_post_stati_with_any' ),
 			);
 
 			self::$related_objects['post-types'] = [
@@ -1802,7 +1854,7 @@ class PodsField_Pick extends PodsField {
 			}
 
 			$related_pod        = $related_field->get_parent_object();
-			$related_pick_limit = $related_field->get_arg( 'related_pick_limit', 0 );
+			$related_pick_limit = $related_field->get_limit();
 			$current_ids        = self::$api->lookup_related_items( $options['id'], $pod['id'], $id, $options, $pod );
 
 			// Get ids to remove.
@@ -2551,7 +2603,7 @@ class PodsField_Pick extends PodsField {
 					$params['where'][] = '`t`.`post_author` = ' . (int) $post_author_id;
 				}
 
-				$display = trim( pods_v( static::$type . '_display', $options ), ' {@}' );
+				$display = trim( (string) pods_v( static::$type . '_display', $options ), ' {@}' );
 
 				$display_field       = "`t`.`{$search_data->field_index}`";
 				$display_field_name  = $search_data->field_index;
@@ -3103,17 +3155,50 @@ class PodsField_Pick extends PodsField {
 	 * @since 2.3.0
 	 */
 	public function data_post_stati( $name = null, $value = null, $options = null, $pod = null, $id = null ) {
+		$data = [];
 
-		$data = array();
-
-		$post_stati = get_post_stati( array(), 'objects' );
+		$post_stati = get_post_stati( [], 'objects' );
 
 		foreach ( $post_stati as $post_status ) {
 			$data[ $post_status->name ] = $post_status->label;
 		}
 
-		return apply_filters( 'pods_form_ui_field_pick_data_post_stati', $data, $name, $value, $options, $pod, $id );
+		return (array) apply_filters( 'pods_form_ui_field_pick_data_post_stati', $data, $name, $value, $options, $pod, $id );
+	}
 
+	/**
+	 * Data callback for Post Stati (with any).
+	 *
+	 * @param string|null       $name    The name of the field.
+	 * @param string|array|null $value   The value of the field.
+	 * @param array|null        $options Field options.
+	 * @param array|null        $pod     Pod data.
+	 * @param int|null          $id      Item ID.
+	 *
+	 * @return array
+	 *
+	 * @since 2.9.10
+	 */
+	public function data_post_stati_with_any( $name = null, $value = null, $options = null, $pod = null, $id = null ) {
+		$data = [
+			'_pods_any' => esc_html__( 'Any Status (excluding Auto-Draft and Trashed)', 'pods' ),
+		];
+
+		$data = array_merge( $data, $this->data_post_stati( $name, $value, $options, $pod, $id ) );
+
+		/**
+		 * Allow filtering the list of post stati with any.
+		 *
+		 * @since 2.9.10
+		 *
+		 * @param array             $data    The list of post stati with any.
+		 * @param string|null       $name    The name of the field.
+		 * @param string|array|null $value   The value of the field.
+		 * @param array|null        $options Field options.
+		 * @param array|null        $pod     Pod data.
+		 * @param int|null          $id      Item ID.
+		 */
+		return (array) apply_filters( 'pods_form_ui_field_pick_data_post_stati_with_any', $data, $name, $value, $options, $pod, $id );
 	}
 
 	/**
@@ -4038,7 +4123,7 @@ class PodsField_Pick extends PodsField {
 		}
 
 		if ( ! $obj ) {
-			$obj = pods( $params['pod'] );
+			$obj = pods_get_instance( $params['pod'] );
 		}
 
 		if ( ! $obj || ! $obj->fetch( $id ) ) {

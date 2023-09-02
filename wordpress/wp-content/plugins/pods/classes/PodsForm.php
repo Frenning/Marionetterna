@@ -226,6 +226,8 @@ class PodsForm {
 
 		$helper = false;
 
+		$input_helper = pods_v( 'input_helper', $options );
+
 		/**
 		 * Input helpers are deprecated and not guaranteed to work properly.
 		 *
@@ -233,8 +235,8 @@ class PodsForm {
 		 *
 		 * @deprecated 2.7.0
 		 */
-		if ( 0 < strlen( pods_v( 'input_helper', $options ) ) ) {
-			$helper = pods_api()->load_helper( array( 'name' => $options['input_helper'] ) );
+		if ( is_string( $input_helper ) && 0 < strlen( $input_helper ) ) {
+			$helper = pods_api()->load_helper( array( 'name' => $input_helper ) );
 		}
 
 		if ( empty( $type ) ) {
@@ -268,7 +270,7 @@ class PodsForm {
 			 * @deprecated 2.7.0
 			 */
 			do_action( "pods_form_ui_field_{$type}", $name, $value, $options, $pod, $id );
-		} elseif ( ! empty( $helper ) && 0 < strlen( pods_v( 'code', $helper ) ) && false === strpos( $helper['code'], '$this->' ) && ( ! defined( 'PODS_DISABLE_EVAL' ) || ! PODS_DISABLE_EVAL ) ) {
+		} elseif ( ! empty( $helper ) && 0 < strlen( (string) pods_v( 'code', $helper ) ) && false === strpos( $helper['code'], '$this->' ) && ( ! defined( 'PODS_DISABLE_EVAL' ) || ! PODS_DISABLE_EVAL ) ) {
 			/**
 			 * Input helpers are deprecated and not guaranteed to work properly.
 			 *
@@ -550,7 +552,7 @@ class PodsForm {
 			$_attributes['name']            = $name;
 			$_attributes['data-name-clean'] = $name_more_clean;
 
-			if ( 0 < strlen( pods_v( 'label', $options, '' ) ) ) {
+			if ( 0 < strlen( (string) pods_v( 'label', $options, '' ) ) ) {
 				$_attributes['data-label'] = strip_tags( pods_v( 'label', $options ) );
 			}
 
@@ -593,7 +595,7 @@ class PodsForm {
 			}
 		}
 
-		$placeholder = trim( pods_v( 'placeholder', $options, pods_v( $type . '_placeholder', $options ) ) );
+		$placeholder = trim( (string) pods_v( 'placeholder', $options, pods_v( $type . '_placeholder', $options ) ) );
 
 		if ( ! empty( $placeholder ) ) {
 			$attributes['placeholder'] = $placeholder;
@@ -1590,32 +1592,15 @@ class PodsForm {
 	}
 
 	/**
-	 * Get a list of all available Pod types.
+	 * Get a list of all available Pod types (no labels).
 	 *
 	 * @return string[] List of Pod types.
 	 *
 	 * @since 2.8.0
+	 * @deprecated 2.9.17 Use pods_api()->get_pod_types() instead.
 	 */
 	public static function pod_types_list() {
-		$pod_types = [
-			'post_type',
-			'taxonomy',
-			'user',
-			'media',
-			'comment',
-			'settings',
-			'pod',
-			'table',
-		];
-
-		/**
-		 * Allow filtering of the supported Pod types.
-		 *
-		 * @since 2.8.0
-		 *
-		 * @param array $pod_types List of Pod types supported.
-		 */
-		return apply_filters( 'pods_api_pod_types', $pod_types );
+		return array_keys( pods_api()->get_pod_types() );
 	}
 
 	/**

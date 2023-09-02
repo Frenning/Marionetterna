@@ -160,7 +160,7 @@ class PodsComponents {
 
 			$capability = 'pods_component_' . str_replace( '-', '_', sanitize_title( $component ) );
 
-			if ( 0 < strlen( $component_data['Capability'] ) ) {
+			if ( 0 < strlen( (string) $component_data['Capability'] ) ) {
 				$capability = $component_data['Capability'];
 			}
 
@@ -402,31 +402,34 @@ class PodsComponents {
 				closedir( $component_dir );
 			}//end if
 
-			$default_headers = array(
-				'ID'               => 'ID',
-				'Name'             => 'Name',
-				'ShortName'        => 'Short Name',
-				'PluginName'       => 'Plugin Name',
-				'ComponentName'    => 'Component Name',
-				'URI'              => 'URI',
-				'MenuName'         => 'Menu Name',
-				'MenuPage'         => 'Menu Page',
-				'MenuAddPage'      => 'Menu Add Page',
-				'MustUse'          => 'Must Use',
-				'Description'      => 'Description',
-				'Version'          => 'Version',
-				'Category'         => 'Category',
-				'Author'           => 'Author',
-				'AuthorURI'        => 'Author URI',
-				'Class'            => 'Class',
-				'Hide'             => 'Hide',
-				'PluginDependency' => 'Plugin Dependency',
-				'ThemeDependency'  => 'Theme Dependency',
-				'DeveloperMode'    => 'Developer Mode',
-				'TablelessMode'    => 'Tableless Mode',
-				'Capability'       => 'Capability',
-				'Plugin'           => 'Plugin',
-			);
+			$default_headers = [
+				'ID'                       => 'ID',
+				'Name'                     => 'Name',
+				'ShortName'                => 'Short Name',
+				'PluginName'               => 'Plugin Name',
+				'ComponentName'            => 'Component Name',
+				'URI'                      => 'URI',
+				'MenuName'                 => 'Menu Name',
+				'MenuPage'                 => 'Menu Page',
+				'MenuAddPage'              => 'Menu Add Page',
+				'MustUse'                  => 'Must Use',
+				'Description'              => 'Description',
+				'Deprecated'               => 'Deprecated',
+				'DeprecatedInVersion'      => 'Deprecated In Version',
+				'DeprecatedRemovalVersion' => 'Deprecated Removal Version',
+				'Version'                  => 'Version',
+				'Category'                 => 'Category',
+				'Author'                   => 'Author',
+				'AuthorURI'                => 'Author URI',
+				'Class'                    => 'Class',
+				'Hide'                     => 'Hide',
+				'PluginDependency'         => 'Plugin Dependency',
+				'ThemeDependency'          => 'Theme Dependency',
+				'DeveloperMode'            => 'Developer Mode',
+				'TablelessMode'            => 'Tableless Mode',
+				'Capability'               => 'Capability',
+				'Plugin'                   => 'Plugin',
+			];
 
 			$component_files = apply_filters( 'pods_components_register', $component_files );
 
@@ -722,7 +725,7 @@ class PodsComponents {
 
 			$capability = 'pods_component_' . str_replace( '-', '_', sanitize_title( str_replace( ' and ', ' ', strip_tags( $component_data['Name'] ) ) ) );
 
-			if ( 0 < strlen( $component_data['Capability'] ) ) {
+			if ( 0 < strlen( (string) $component_data['Capability'] ) ) {
 				$capability = $component_data['Capability'];
 			}
 

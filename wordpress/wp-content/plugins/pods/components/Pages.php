@@ -113,18 +113,19 @@ class Pods_Pages extends PodsComponent {
 	 */
 	public function register_config() {
 		$args = array(
-			'label'        => 'Pod Pages',
-			'labels'       => array( 'singular_name' => 'Pod Page' ),
-			'public'       => false,
-			'can_export'   => false,
-			'show_ui'      => true,
-			'show_in_menu' => false,
-			'query_var'    => false,
-			'rewrite'      => false,
-			'has_archive'  => false,
-			'hierarchical' => false,
-			'supports'     => array( 'title', 'author', 'revisions' ),
-			'menu_icon'    => pods_svg_icon( 'pods' ),
+			'label'            => 'Pod Pages',
+			'labels'           => array( 'singular_name' => 'Pod Page' ),
+			'public'           => false,
+			'can_export'       => false,
+			'show_ui'          => true,
+			'show_in_menu'     => false,
+			'query_var'        => false,
+			'rewrite'          => false,
+			'has_archive'      => false,
+			'hierarchical'     => false,
+			'supports'         => array( 'title', 'author', 'revisions' ),
+			'menu_icon'        => pods_svg_icon( 'pods' ),
+			'delete_with_user' => false,
 		);
 
 		if ( ! pods_is_admin() ) {
@@ -225,6 +226,7 @@ class Pods_Pages extends PodsComponent {
 				'type'                  => 'pick',
 				'pick_object'           => 'custom-simple',
 				'pick_format_type'      => 'single',
+				'pick_format_single' => 'dropdown',
 				'data'                  => $page_templates,
 				'override_object_field' => true,
 			],
@@ -256,6 +258,7 @@ class Pods_Pages extends PodsComponent {
 				'type'             => 'pick',
 				'pick_object'      => 'custom-simple',
 				'pick_format_type' => 'single',
+				'pick_format_single' => 'dropdown',
 				'placeholder'      => __( 'Select Pod', 'pods' ),
 				'data'             => $associated_pods,
 				'dependency'       => true,
@@ -1075,7 +1078,7 @@ class Pods_Pages extends PodsComponent {
 			if ( $permission ) {
 				$content = false;
 
-				if ( ! is_object( $pods ) && 404 != $pods && 0 < strlen( pods_var( 'pod', self::$exists['options'] ) ) ) {
+				if ( ! is_object( $pods ) && 404 != $pods && 0 < strlen( (string) pods_var( 'pod', self::$exists['options'] ) ) ) {
 					$slug = pods_var_raw( 'pod_slug', self::$exists['options'], null, null, true );
 
 					$has_slug = 0 < strlen( $slug );
@@ -1085,7 +1088,7 @@ class Pods_Pages extends PodsComponent {
 						$slug = pods_evaluate_tags( $slug, true );
 					}
 
-					$pods = pods( pods_var( 'pod', self::$exists['options'] ), $slug );
+					$pods = pods_get_instance( pods_var( 'pod', self::$exists['options'] ), $slug );
 
 					// Auto 404 handling if item doesn't exist
 					if ( $has_slug && ( empty( $slug ) || ! $pods->exists() ) && apply_filters( 'pods_pages_auto_404', true, $slug, $pods, self::$exists ) ) {

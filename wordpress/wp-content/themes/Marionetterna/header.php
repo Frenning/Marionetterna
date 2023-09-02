@@ -22,7 +22,7 @@
 <?php wp_head(); ?>
 </head>
 
-<body <?php body_class(); ?>>
+<body>
 <div id="page" class="hfeed site">
 	<nav class="navbar navbar-default" role="navigation">
 		<div class="container">

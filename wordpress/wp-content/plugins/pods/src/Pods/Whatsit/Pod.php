@@ -22,22 +22,37 @@ class Pod extends Whatsit {
 	 *
 	 * @since 2.8.1
 	 *
+	 * @param boolean $strict Whether to only get the argument, otherwise the default will be returned.
+	 *
 	 * @return string The storage used for the Pod data (meta, table, etc).
 	 */
-	public function get_storage() {
-		$storage = $this->get_arg( 'storage' );
+	public function get_storage( $strict = false ) {
+		$storage = parent::get_arg( 'storage' );
 
-		if ( empty( $storage ) ) {
-			$type    = $this->get_type();
-			$storage = 'none';
+		if ( ! $strict && empty( $storage ) ) {
+			$storage = $this->get_default_storage();
+		}
 
-			if ( in_array( $type, [ 'post_type', 'taxonomy', 'user', 'comment', 'media' ], true ) ) {
-				$storage = 'meta';
-			} elseif ( in_array( $type, [ 'pod', 'table' ], true ) ) {
-				$storage = 'meta';
-			} elseif ( 'settings' === $type )  {
-				$storage = 'option';
-			}
+		return $storage;
+	}
+
+	/**
+	 * Get the default storage used for the Pod data (meta, table, etc) based on the current Pod type.
+	 *
+	 * @since 2.9.16
+	 *
+	 * @return string The default storage used for the Pod data (meta, table, etc).
+	 */
+	public function get_default_storage() {
+		$type    = $this->get_type();
+		$storage = 'none';
+
+		if ( in_array( $type, [ 'post_type', 'taxonomy', 'user', 'comment', 'media' ], true ) ) {
+			$storage = 'meta';
+		} elseif ( in_array( $type, [ 'pod', 'table' ], true ) ) {
+			$storage = 'table';
+		} elseif ( 'settings' === $type )  {
+			$storage = 'option';
 		}
 
 		return $storage;
@@ -48,6 +63,8 @@ class Pod extends Whatsit {
 	 */
 	public function get_args() {
 		$args = parent::get_args();
+
+		$args['storage'] = $this->get_arg( 'storage' );
 
 		// Pods generally have no parent, group, or order.
 		unset( $args['parent'], $args['group'], $args['weight'] );
@@ -71,6 +88,14 @@ class Pod extends Whatsit {
 	 * {@inheritdoc}
 	 */
 	public function get_arg( $arg, $default = null, $strict = false ) {
+		if ( 'storage' === $arg ) {
+			return $this->get_storage();
+		}
+
+		if ( 'type' === $arg && null === $default ) {
+			$default = 'post_type';
+		}
+
 		$value = parent::get_arg( $arg, $default, $strict );
 
 		// Better handle object for extended objects.
@@ -193,6 +218,8 @@ class Pod extends Whatsit {
 		} elseif ( 'media' === $type ) {
 			return true;
 		} elseif ( 'comment' === $type ) {
+			return true;
+		} elseif ( $type === $name ) {
 			return true;
 		} elseif ( 'post_type' !== $type && 'taxonomy' !== $type ) {
 			return false;

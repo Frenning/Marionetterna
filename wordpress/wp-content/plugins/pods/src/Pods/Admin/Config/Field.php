@@ -3,7 +3,6 @@
 namespace Pods\Admin\Config;
 
 use PodsForm;
-use Tribe__Main;
 
 /**
  * Field configuration class.
@@ -154,6 +153,7 @@ class Field extends Base {
 				'default'    => 'text',
 				'required'   => true,
 				'data'       => [],
+				'pick_format_single' => 'dropdown',
 				'dependency' => true,
 				'help'       => 'help',
 			],
@@ -164,6 +164,7 @@ class Field extends Base {
 				'default'               => '',
 				'required'              => true,
 				'data'                  => [],
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency'            => true,
 				'depends-on'            => [
@@ -189,6 +190,7 @@ class Field extends Base {
 				'type'                  => 'pick',
 				'default'               => '',
 				'data'                  => [],
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'depends-on'            => [
 					'type'        => 'pick',
@@ -202,6 +204,7 @@ class Field extends Base {
 				'type'       => 'pick',
 				'default'    => '',
 				'data'       => [],
+				'pick_format_single' => 'dropdown',
 				'depends-on' => [
 					'type'        => 'pick',
 					'pick_object' => PodsForm::field_method( 'pick', 'bidirectional_objects' ),
@@ -215,6 +218,18 @@ class Field extends Base {
 				'default'           => 0,
 				'boolean_yes_label' => '',
 				'help'              => __( 'This will require a non-empty value to be entered.', 'pods' ),
+			],
+			'required_help_boolean'    => [
+				'name'              => 'required_help_boolean',
+				'label'             => '',
+				'type'              => 'html',
+				'default'           => 0,
+				'html_content'      => '<p><em>' . esc_html__( 'Please note: When Yes/No fields are required, the field must be set to Yes (checked) to be able to submit the form.', 'pods' ) . '</em></p>',
+				'dependency'        => true,
+				'depends-on'        => [
+					'required' => true,
+					'type' => 'boolean',
+				],
 			],
 		];
 
@@ -257,6 +272,7 @@ class Field extends Base {
 					'non_serial' => __( 'Item 1, Item 2 and Item 3', 'pods' ),
 					'custom'     => __( 'Custom separator (without "and")', 'pods' ),
 				],
+				'pick_format_single' => 'dropdown',
 				'pick_show_select_text' => 0,
 				'dependency'            => true,
 			],
@@ -531,16 +547,13 @@ class Field extends Base {
 		$options['basic']['pick_table']['data']  = $field_settings['pick_table'];
 
 		// @todo Look into supporting these in the future.
-		/*Tribe__Main::array_insert_after_key( 'visibility', $options['advanced'], [
+		/*
 			'search' => [
 				'label'   => __( 'Include in searches', 'pods' ),
 				'help'    => __( 'help', 'pods' ),
 				'default' => 1,
 				'type'    => 'boolean',
 			],
-		] );
-
-		Tribe__Main::array_insert_after_key( 'validation', $options['advanced'], [
 			'regex_validation' => [
 				'label'   => __( 'RegEx Validation', 'pods' ),
 				'help'    => __( 'help', 'pods' ),
@@ -567,7 +580,7 @@ class Field extends Base {
 				'default'    => '',
 				'depends-on' => [ 'unique' => true ],
 			],
-		] );*/
+		*/
 
 		if ( 'table' === $pod['storage'] || 'pod' === $pod['type'] ) {
 			unset( $options['basic']['repeatable'] );

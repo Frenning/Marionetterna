@@ -7,7 +7,6 @@ use Exception;
 use Pods\Whatsit;
 use Tribe__REST__Messages_Interface as Messages_Interface;
 use Tribe__REST__Post_Repository as Post_Repository;
-use Tribe__Utils__Array as Utils_Array;
 use Tribe__Validator__Interface as Validator_Interface;
 use WP_Error;
 use WP_REST_Request;
@@ -186,7 +185,7 @@ abstract class Base {
 			'bool' => 'boolean',
 		];
 
-		return Utils_Array::get( $rest_to_swagger_type_map, $type, $type );
+		return pods_v( $type, $rest_to_swagger_type_map, $type, true );
 	}
 
 	/**
@@ -228,7 +227,7 @@ abstract class Base {
 	 * @return false|Pods
 	 */
 	public function get_pod_item_by_id_or_slug( $id_or_slug ) {
-		$pod = pods( $this->object, $id_or_slug );
+		$pod = pods_get_instance( $this->object, $id_or_slug );
 
 		if ( ! $pod || is_wp_error( $pod ) || ! $pod->valid() || ! $pod->exists() ) {
 			return false;
@@ -282,7 +281,7 @@ abstract class Base {
 	 *
 	 * @return bool Whether the user has access to the pod item.
 	 */
-	public function check_permission( Pods $pod, $author_field, int $user_id = null ) {
+	public function check_permission( Pods $pod, $author_field, $user_id = null ) {
 		// Maybe use the current user ID.
 		if ( null === $user_id ) {
 			if ( ! is_user_logged_in() ) {
@@ -325,11 +324,11 @@ abstract class Base {
 		}
 
 		if ( ! empty( $request['types'] ) ) {
-			$params['type'] = Utils_Array::list_to_array( $request['types'] );
+			$params['type'] = wp_parse_list( $request['types'] );
 		}
 
 		if ( ! empty( $request['ids'] ) ) {
-			$params['id'] = Utils_Array::list_to_array( $request['ids'] );
+			$params['id'] = wp_parse_list( $request['ids'] );
 		}
 
 		if ( ! empty( $request['args'] ) ) {
@@ -795,7 +794,7 @@ abstract class Base {
 
 				$doc_endpoint_obj->register_documentation_provider( $rest_doc_route, $this );
 			} catch ( Exception $exception ) {
-				// Do nothing.
+				pods_debug_log( $exception );
 			}
 		}
 

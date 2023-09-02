@@ -42,16 +42,11 @@ body {
     font-size: 14px !important;
     padding: 0 !important;
     margin: 0 !important;
-    background-image: url("../../assets/images/danskursmar.png");
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
     overflow-x: scroll;
   }
 
   button {
-    background-color: #FFFE;
+    background-color: #000E;
     border-radius: 10px;
     &::-moz-focus-inner {
       /* Corrects inner padding and border displayed oddly in FF3/4 www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ */
@@ -68,11 +63,8 @@ body {
     transition: all 0.2s;
     color: #DAA520;
     &:hover, &:active {
-      color: #0645AD;
+      color: #FFFE;
     }    
-    &:hover {
-      text-decoration: none;
-    }
     &:focus {
       text-decoration: none;
       outline: thin dotted;
@@ -81,30 +73,30 @@ body {
     }
   }
   
+  h1, h2, h3, h4, h5, h6 {
+    padding: 10px 0px;
+    color: #000E;
+  }
+
   h1, .h1 {
-    color: #FFFE;
     font-size: 42px;
     padding: 10px 0px 10px 0px;
-    border-bottom: 1px solid white;
+    border-bottom: 1px solid black;
   }
   
   h2, .h2 {
-    color: #EEEE;
     font-size: 28px;
   }
   
   h3, .h3 {
-    color:#DDDE;
     font-size: 24px;
   }
   
   h4, .h4 {
-    color: #CCCE;
     font-size: 18px;
   }
   
   h5, .h5 {
-    color: #BBBE;
     font-size: 16px;
     font-weight: bold;
     margin-top: 5px;
@@ -112,13 +104,12 @@ body {
   }
   
   h6, .h6 {
-    color: #AAAE;
     font-size: 14px;
     margin: 0px;
   }
 
-  p, li {
-    color: #EEEE;
+  p, span, li, th, tr, td {
+    color: #111E;
   }
   
   img {
@@ -141,28 +132,6 @@ body {
   
   /* =Custom Styles
   ----------------------------------------------- */
-  .site-branding {
-    margin-top: 20px;
-    margin-bottom: 20px;
-  }
-  
-  .site-description {
-    clear: both;
-    color: #777;
-    font-weight: 200;
-    font-size: 14px;
-  }
-  
-  .background-image {
-    z-index: 100;
-    width: 100%;
-  }
-
-  .page-template-page-homepage-php .carousel {
-    margin-top: -20px;
-    margin-bottom: 20px;
-  }
-  
   .img-leaders {
     border-radius: 10px;
     margin-top: 20px;
@@ -173,43 +142,32 @@ body {
     }
   }
 
-  .activityList {
-    padding: 0px;
-    margin: 0px;
-    width: 100%;
-  }
-
   .headline-area {
     padding: 40px 0;
   }
 
+  .backgroundImage {
+    background-image: url("../../assets/images/dance-in-spotlight-left.png"), url("../../assets/images/dance-in-spotlight-right.png");
+    background-attachment: scroll;
+    background-repeat: no-repeat;
+    background-position: left top, right top;
+    background-size: 30%, 30%;
+  }
+
   #primary {
-    background-color: #000E;
-    min-height: 1020px;
-    padding-bottom: 5px;
     position: relative;
+    background-color: #000;
   }
 
   #secondary {
-    background-color: #FFFE;
-  }
-
-  .frontPageContent {
-    height: fit-content;
-    position: absolute;
-    top: 25%;
-    left: 50%;
-    transform: translate(-50%, -25%);
-    margin: auto;
+    background-color: #000;
   }
 
   .frontPageButton {
-    position: absolute;
-    top: 125%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: inherit;
+    display: block;
+    width: fit-content;
     margin: 15px auto;
+    clear: both;
     font-size: 26px;
     > a {
       display: block;
@@ -223,12 +181,12 @@ body {
   }
 
   .pageContent {
-    margin: auto;
-    clear: both;
-  }
-
-  .content-leaders {
     height: 100%;
+    min-height: 1020px;
+    margin: auto;
+    padding: 25px 10px;
+    clear: both;
+    background-color: #FFF;
   }
   
   .resultat-scroll {
@@ -239,9 +197,9 @@ body {
     overflow-x: scroll;
   } 
 
-  .post-area {
+  .postArea {
     width: fit-content;
-    border-bottom: 1px solid white;
+    border-bottom: 1px solid black;
     min-height: 50px;
     margin: auto;
   }
@@ -270,30 +228,30 @@ body {
 
   /* Alignment */
   
-  .align-left {
+  .alignLeft {
     display: inline;
     float: left;
     margin-right: 1.5em;
   }
   
-  .align-right {
+  .alignRight {
     display: inline;
     float: right;
     margin-left: 1.5em;
   }
   
-  .align-center {
+  .alignCenter {
     width: fit-content;
     clear: both;
     display: block;
-    margin: auto;
+    margin: 0 auto;
   }
   
   /* =Widgets
   ----------------------------------------------- */
   
   #sidebar {
-    background-color: #000B;
+    background-color: #000E;
   }
 
   .widget {
@@ -304,6 +262,9 @@ body {
 
   .widget-area {
     margin: auto;
+    p {
+      color: #FFFE;
+    }
   }
 
   /* Layout */
@@ -330,6 +291,9 @@ body {
     font-size: 12px;
     ul li {
       border-bottom: 1px solid #444;
+    }
+    p {
+      color: #FFFE;
     }
   }
 
@@ -422,36 +386,9 @@ body {
   /* =Mobile Styling
   ----------------------------------------------- */
   @media (max-width: 992px) {
-    .site-branding {
-      text-align: center;
-    }
-    #social {
-      top: 0;
-      float: none;
-      text-align: center;
-    }
-    .side-pull-left .main-content-inner, .side-pull-right .main-content-inner {
-      float: none;
-    }
-  }
 
-  @media (min-width: 992px) {
-    .side-pull-left #primary {
-      float: left;
-    }
-    .side-pull-right #primary {
-      float: right;
-    }
   }
 
   @media (max-width: 768px) {
-    .pull-right, .pull-left {
-      float: none !important;
-    }
-    .site-info, .copyright {
-      text-align: center;
-    }
-    .flex-caption {
-      display: none;
-    }
+
   }

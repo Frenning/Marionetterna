@@ -4,6 +4,7 @@ namespace Pods\Whatsit\Storage;
 
 use Pods\Whatsit;
 use Pods\Whatsit\Store;
+use WP_Post;
 use WP_Query;
 
 /**
@@ -22,12 +23,14 @@ class Post_Type extends Collection {
 	 * @var array
 	 */
 	protected $primary_args = [
-		'ID'           => 'id',
-		'post_name'    => 'name',
-		'post_title'   => 'label',
-		'post_content' => 'description',
-		'post_parent'  => 'parent',
-		'menu_order'   => 'weight',
+		'object_type'         => 'object_type',
+		'object_storage_type' => 'object_storage_type',
+		'ID'                  => 'id',
+		'post_name'           => 'name',
+		'post_title'          => 'label',
+		'post_content'        => 'description',
+		'post_parent'         => 'parent',
+		'menu_order'          => 'weight',
 	];
 
 	/**
@@ -82,9 +85,91 @@ class Post_Type extends Collection {
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_by_identifier( $identifier, $parent = null ) {
+		if ( $identifier instanceof Whatsit ) {
+			return $identifier;
+		}
+
+		if ( is_int( $identifier ) ) {
+			return $this->to_object( $identifier );
+		}
+
+		return parent::get_by_identifier( $identifier, $parent );
+	}
+
+	/**
+	 * Maybe get the post object by ID if the $args allow for it.
+	 *
+	 * @param array $post_args Arguments to use.
+	 *
+	 * @return WP_Post|false|null
+	 */
+	private function maybe_get_by_id( array $post_args ) {
+		// Only get by ID if we limit to one.
+		if ( ! isset( $post_args['posts_per_page'] ) || 1 !== $post_args['posts_per_page'] ) {
+			return null;
+		}
+
+		// Only get by ID if we have one post__in.
+		if ( ! isset( $post_args['post__in'] ) || 1 !== count( $post_args['post__in'] ) ) {
+			return null;
+		}
+
+		// Only get by ID if we are not filtering by meta / terms.
+		if ( ! empty( $post_args['meta_query'] ) || ! empty( $post_args['tax_query'] ) ) {
+			return null;
+		}
+
+		$first_id = (int) reset( $post_args['post__in'] );
+
+		// Check if we have a valid ID (1+).
+		if ( ! $first_id ) {
+			return false;
+		}
+
+		$post = get_post( $first_id );
+
+		if ( ! $post instanceof WP_Post ) {
+			return false;
+		}
+
+		// Manually check other criteria.
+
+		// Maybe filter by post_type.
+		if (
+			! isset( $post_args['post_type'] )
+			|| (
+				'any' !== $post_args['post_type']
+				&& ! in_array( $post->post_type, (array) $post_args['post_type'], true )
+			)
+		) {
+			return false;
+		}
+
+		// Maybe filter by post_status.
+		if (
+			! isset( $post_args['post_status'] )
+			|| (
+				'any' !== $post_args['post_status']
+				&& ! in_array( $post->post_status, (array) $post_args['post_status'], true )
+			)
+		) {
+			return false;
+		}
+
+		return $post;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function find( array $args = [] ) {
-		// Object type OR parent is required.
-		if ( empty( $args['object_type'] ) && empty( $args['parent'] ) ) {
+		// Object type AND parent/ID is required.
+		if (
+			empty( $args['object_type'] )
+			&& empty( $args['id'] )
+			&& empty( $args['parent'] )
+		) {
 			return [];
 		}
 
@@ -324,16 +409,24 @@ class Post_Type extends Collection {
 
 		$query        = null;
 		$cache_key    = null;
+		$use_cache    = false;
 		$posts        = false;
 		$post_objects = false;
 
 		$cache_key_post_type = 'any';
+		$cache_key_static_check = '';
 
-		if ( isset( $post_args['post_type'] ) ) {
+		if ( ! empty( $post_args['post_type'] ) ) {
 			$cache_key_post_type = $post_args['post_type'];
 		}
 
 		if ( empty( $args['bypass_cache'] ) && empty( $args['bypass_post_type_find'] ) ) {
+			$use_cache = true;
+
+			$post_args_encoded = wp_json_encode( $post_args );
+
+			$cache_key_static_check = __METHOD__ . '/' . $post_args_encoded;
+
 			$cache_key_parts = [
 				'pods_whatsit_storage_post_type_find',
 			];
@@ -352,11 +445,12 @@ class Post_Type extends Collection {
 
 			if ( ! empty( $args['ids'] ) ) {
 				$cache_key_parts[] = '_ids';
+
+				$cache_key_static_check .= '/ids';
 			}
 
 			$cache_key_parts[] = $current_language;
-
-			$cache_key_parts[] = wp_json_encode( $post_args );
+			$cache_key_parts[] = $post_args_encoded;
 
 			/**
 			 * Filter cache key parts used for generating the cache key.
@@ -375,8 +469,18 @@ class Post_Type extends Collection {
 			$cache_key = implode( '_', $cache_key_parts );
 
 			if ( empty( $args['refresh'] ) ) {
-				$posts        = pods_transient_get( $cache_key );
-				$post_objects = pods_cache_get( $cache_key . '_objects', 'pods_post_type_storage_' . $cache_key_post_type );
+				$posts = pods_static_cache_get( $cache_key_static_check, self::class . '/find_objects/' . $cache_key_post_type );
+				$post_objects = pods_static_cache_get( $cache_key_static_check . '_objects', self::class . '/find_objects/' . $cache_key_post_type );
+
+				// If we have no posts in static cache, we don't need to query again.
+				if ( [] !== $posts ) {
+					$posts = pods_transient_get( $cache_key );
+				}
+
+				// If we have no posts in static cache, we don't need to query again.
+				if ( [] !== $post_objects ) {
+					$post_objects = pods_cache_get( $cache_key . '_objects', 'pods_post_type_storage_' . $cache_key_post_type );
+				}
 			}
 		}//end if
 
@@ -398,7 +502,21 @@ class Post_Type extends Collection {
 
 				$query = new WP_Query();
 
-				$posts = $query->query( $post_args );
+				$post_by_id = $this->maybe_get_by_id( $post_args );
+
+				if ( false === $post_by_id ) {
+					$query->posts       = [];
+					$query->found_posts = 0;
+				} elseif ( null !== $post_by_id ) {
+					$query->posts       = [
+						$post_by_id,
+					];
+					$query->found_posts = 1;
+
+					$posts = $query->posts;
+				} else {
+					$posts = $query->query( $post_args );
+				}
 
 				if ( ! $no_conflict_post ) {
 					pods_no_conflict_off( 'post' );
@@ -416,7 +534,8 @@ class Post_Type extends Collection {
 					$posts = wp_list_pluck( $posts, 'ID' );
 				}
 
-				if ( empty( $args['bypass_cache'] ) ) {
+				if ( $use_cache && empty( $args['bypass_cache'] ) ) {
+					pods_static_cache_set( $cache_key_static_check, $posts, self::class . '/find_objects/' . $cache_key_post_type );
 					pods_transient_set( $cache_key, $posts, WEEK_IN_SECONDS );
 				}
 			}
@@ -454,7 +573,8 @@ class Post_Type extends Collection {
 				}
 			}
 
-			if ( empty( $args['bypass_post_type_find'] ) && empty( $args['bypass_cache'] ) ) {
+			if ( $use_cache && empty( $args['bypass_post_type_find'] ) && empty( $args['bypass_cache'] ) ) {
+				pods_static_cache_set( $cache_key_static_check . '_objects', $post_objects, self::class . '/find_objects/' . $cache_key_post_type );
 				pods_cache_set( $cache_key . '_objects', $post_objects, 'pods_post_type_storage_' . $cache_key_post_type, WEEK_IN_SECONDS );
 			}
 		}
@@ -475,7 +595,12 @@ class Post_Type extends Collection {
 				}, $post_objects );
 			} else {
 				// Handle normal Whatsit object setup.
-				update_postmeta_cache( $posts ); // Prevent separate queries for each iteration.
+
+				// Prevent separate queries for each iteration.
+				if ( wp_using_ext_object_cache() ) {
+					update_postmeta_cache( $posts );
+				}
+
 				$posts = array_map( [ $this, 'to_object' ], $post_objects );
 				$posts = array_filter( $posts );
 			}
@@ -665,6 +790,13 @@ class Post_Type extends Collection {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function to_object( $value, $force_refresh = false ) {
+		return $this->to_object_from_post( $value, $force_refresh );
+	}
+
+	/**
 	 * Setup object from a Post ID or Post object.
 	 *
 	 * @param \WP_Post|array|int $post          Post object or ID of the object.
@@ -672,7 +804,7 @@ class Post_Type extends Collection {
 	 *
 	 * @return Whatsit|null
 	 */
-	public function to_object( $post, $force_refresh = false ) {
+	public function to_object_from_post( $post, $force_refresh = false ) {
 		if ( null !== $post && ! $post instanceof \WP_Post ) {
 			$post = get_post( $post );
 		}
@@ -681,7 +813,7 @@ class Post_Type extends Collection {
 			return null;
 		}
 
-		if ( ! $post || is_wp_error( $post ) ) {
+		if ( is_wp_error( $post ) ) {
 			return null;
 		}
 
@@ -719,9 +851,9 @@ class Post_Type extends Collection {
 		/** @var Whatsit $object */
 		$object = new $class_name( $args );
 
-		$this->get_args( $object );
-
 		$object->set_arg( 'object_storage_type', $this->get_object_storage_type() );
+
+		$this->get_args( $object );
 
 		if ( $object->is_valid() ) {
 			$object_collection->register_object( $object );

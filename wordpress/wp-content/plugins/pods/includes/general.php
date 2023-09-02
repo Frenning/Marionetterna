@@ -135,6 +135,17 @@ function pods_message( $message, $type = null, $return = false ) {
 		$class = 'error';
 	}
 
+	// Maybe handle WP-CLI messages.
+	if ( defined( 'WP_CLI' ) ) {
+		if ( 'error' === $type ) {
+			WP_CLI::warning( $message );
+		} else {
+			WP_CLI::line( $message );
+		}
+
+		return null;
+	}
+
 	$html = '<div id="message" class="' . esc_attr( $class ) . ' fade"><p>' . $message . '</p></div>';
 
 	if ( $return ) {
@@ -142,6 +153,8 @@ function pods_message( $message, $type = null, $return = false ) {
 	}
 
 	echo $html;
+
+	return null;
 }
 
 $GLOBALS['pods_errors'] = array();
@@ -324,20 +337,53 @@ function pods_error( $error, $obj = null ) {
 }
 
 /**
+ * Get the last known timing difference.
+ *
+ * @since 2.9.10
+ *
+ * @return float The last known timing difference.
+ */
+function pods_get_timing() {
+	static $timer;
+
+	$now = microtime( true );
+
+	if ( ! $timer ) {
+		$timer = $now;
+	}
+
+	$last_diff = $now - $timer;
+
+	$timer = $now;
+
+	return $last_diff;
+}
+
+/**
+ * Get the last known timing difference as text.
+ *
+ * @since 2.9.10
+ *
+ * @return string The last known timing difference as text.
+ */
+function pods_get_debug_timing() {
+	return '[debug timing: ' . number_format( pods_get_timing(), 4 ) . 's]';
+}
+
+/**
  * Debug variable used in pods_debug to count the instances debug is used
  */
 global $pods_debug;
 $pods_debug = 0;
+
 /**
- * Debugging common issues using this function saves a few lines and is compatible with
- *
- * @param mixed   $debug The error message to be thrown / displayed
- * @param boolean $die   If set to true, a die() will occur, if set to (int) 2 then a wp_die() will occur
- * @param string  $prefix
- *
- * @return void
+ * Output information about a variable using var_dump() to save a few lines and is compatible with Xdebug and WP-CLI.
  *
  * @since 2.0.0
+ *
+ * @param mixed   $debug  The error message to be thrown / displayed.
+ * @param bool    $die    If set to true, a die() will occur, if set to (int) 2 then a wp_die() will occur.
+ * @param string  $prefix Extra information to output above the debug information.
  */
 function pods_debug( $debug = '_null', $die = false, $prefix = '_null' ) {
 	global $pods_debug;
@@ -345,23 +391,17 @@ function pods_debug( $debug = '_null', $die = false, $prefix = '_null' ) {
 	$pods_debug ++;
 
 	if ( function_exists( 'codecept_debug' ) ) {
-		static $timer;
-
-		$now = microtime( true );
-
-		if ( ! $timer ) {
-			$timer = $now;
-		}
-
-		$timing = $now - $timer;
-
-		if ( ! is_string( $debug ) ) {
+		if ( $debug instanceof Exception ) {
+			$debug = 'Exception bypassed: [' . $debug->getCode() . '] ' . $debug->getMessage();
+		} elseif ( ! is_string( $debug ) ) {
 			$debug = var_export( $debug, true );
 		}
 
-		codecept_debug( 'Pods Debug: ' . $debug . ' [debug timing: ' . number_format( $timing, 4 ) . 's]' );
+		if ( '_null' === $prefix ) {
+			$prefix = 'Pods Debug';
+		}
 
-		$timer = $now;
+		codecept_debug( $prefix . ': ' . $debug . ' ' . pods_get_debug_timing() );
 
 		return;
 	}
@@ -371,7 +411,11 @@ function pods_debug( $debug = '_null', $die = false, $prefix = '_null' ) {
 			$debug = var_export( $debug, true );
 		}
 
-		WP_CLI::debug( $debug );
+		if ( '_null' === $prefix ) {
+			$prefix = 'Pods Debug';
+		}
+
+		WP_CLI::debug( $prefix . ': ' . $debug );
 
 		return;
 	}
@@ -389,7 +433,7 @@ function pods_debug( $debug = '_null', $die = false, $prefix = '_null' ) {
 
 		$debug_line_number = __LINE__ - 2;
 	} else {
-		var_dump( 'Pods Debug #' . $pods_debug );
+		var_dump( 'Pods Debug #' . $pods_debug . ' ' . pods_get_debug_timing() );
 
 		$debug_line_number = __LINE__ - 2;
 	}
@@ -432,6 +476,67 @@ function pods_debug( $debug = '_null', $die = false, $prefix = '_null' ) {
 	}
 
 	echo $debug;
+}
+
+/**
+ * Log debug information if WP_DEBUG_LOG is used.
+ *
+ * @since 2.9.12
+ *
+ * @param mixed $debug The error message to be thrown / displayed.
+ */
+function pods_debug_log( $debug ) {
+	if ( function_exists( 'codecept_debug' ) || defined( 'WP_CLI' ) ) {
+		pods_debug( $debug, false, 'Output from pods_debug_log()' );
+
+		return;
+	}
+
+	if ( in_array( strtolower( (string) WP_DEBUG_LOG ), array( 'true', '1' ), true ) ) {
+		$log_path = WP_CONTENT_DIR . '/debug.log';
+	} elseif ( is_string( WP_DEBUG_LOG ) ) {
+		$log_path = WP_DEBUG_LOG;
+	} else {
+		return;
+	}
+
+	ob_start();
+
+	var_dump( $debug );
+
+	$debug_line_number = __LINE__ - 2;
+
+	$debug_line_check = sprintf(
+		'<small>%s:%s:</small>',
+		__FILE__,
+		$debug_line_number
+	);
+
+	$debug = ob_get_clean();
+
+	if ( false === strpos( $debug, "<pre class='xdebug-var-dump'" ) ) {
+		if ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) {
+			$debug = esc_html( $debug );
+		}
+	} elseif ( false !== strpos( $debug, $debug_line_check ) ) {
+		// Attempt to replace the backtrace file/line from our var_dump() above with where the pods_debug() itself was called.
+		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 2 );
+
+		if ( ! empty( $backtrace[0] ) ) {
+			$debug_line_replace = sprintf(
+				'<small>%s:%s:</small>',
+				$backtrace[0]['file'],
+				$backtrace[0]['line']
+			);
+
+			$debug = str_replace( $debug_line_check, $debug_line_replace, $debug );
+		}
+	}
+
+	$debug = 'pods_debug_log: ' . $debug;
+
+	// Log the debug line.
+	error_log( $debug, 0, $log_path );
 }
 
 /**
@@ -657,6 +762,20 @@ function pods_light() {
 }
 
 /**
+ * Determine whether Pods is in a demo from pods.io or not.
+ *
+ * @return bool Whether Pods is in a demo.
+ *
+ * @since TBD
+ */
+function pods_is_demo() {
+	return (
+		1 === (int) pods_v( 'pods_wasm_demo' )
+		|| 1 === (int) pods_v( 'pods_demo' )
+	);
+}
+
+/**
  * Determine if Strict Mode is enabled
  *
  * @param bool $include_debug Whether to include WP_DEBUG in strictness level
@@ -843,7 +962,7 @@ function pods_help( $text, $url = null, $container = null ) {
 		return;
 	}
 
-	if ( 0 < strlen( $url ) ) {
+	if ( $url && 0 < strlen( $url ) ) {
 		$text .= '<br /><br /><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Find out more', 'pods' ) . ' &raquo;</a>';
 	}
 
@@ -1292,7 +1411,7 @@ function pods_shortcode_run( $tags, $content = null ) {
 	}
 
 	// Allow views only if not targeting a file path (must be within theme)
-	if ( 0 < strlen( $tags['view'] ) ) {
+	if ( $tags['view'] && 0 < strlen( (string) $tags['view'] ) ) {
 		$return = '';
 
 		if ( ( ! defined( 'PODS_SHORTCODE_ALLOW_VIEWS' ) || PODS_SHORTCODE_ALLOW_VIEWS ) && ! file_exists( $tags['view'] ) ) {
@@ -1449,11 +1568,11 @@ function pods_shortcode_run( $tags, $content = null ) {
 				'use_current_pod' => true,
 			);
 
-			if ( 0 < strlen( $tags['orderby'] ) ) {
+			if ( $tags['orderby'] && 0 < strlen( (string) $tags['orderby'] ) ) {
 				$params['orderby'] = $tags['orderby'];
 			}
 
-			if ( 0 < strlen( $tags['where'] ) ) {
+			if ( $tags['where'] && 0 < strlen( (string) $tags['where'] ) ) {
 				$params['where'] = $tags['where'];
 
 				if ( pods_shortcode_allow_evaluate_tags() ) {
@@ -1461,7 +1580,7 @@ function pods_shortcode_run( $tags, $content = null ) {
 				}
 			}
 
-			if ( 0 < strlen( $tags['having'] ) ) {
+			if ( $tags['having'] && 0 < strlen( (string) $tags['having'] ) ) {
 				$params['having'] = $tags['having'];
 
 				if ( pods_shortcode_allow_evaluate_tags() ) {
@@ -1469,14 +1588,14 @@ function pods_shortcode_run( $tags, $content = null ) {
 				}
 			}
 
-			if ( 0 < strlen( $tags['groupby'] ) ) {
+			if ( $tags['groupby'] && 0 < strlen( (string) $tags['groupby'] ) ) {
 				$params['groupby'] = $tags['groupby'];
 			}
 
-			if ( 0 < strlen( $tags['select'] ) ) {
+			if ( $tags['select'] && 0 < strlen( (string) $tags['select'] ) ) {
 				$params['select'] = $tags['select'];
 			}
-			if ( 0 < strlen( $tags['join'] ) ) {
+			if ( $tags['join'] && 0 < strlen( (string) $tags['join'] ) ) {
 				$params['join'] = $tags['join'];
 			}
 		}//end if
@@ -1982,15 +2101,17 @@ function pods_function_or_file( $function_or_file, $function_name = null, $file_
 /**
  * Redirects to another page.
  *
- * @param string  $location The path to redirect to
- * @param int     $status   Status code to use
- * @param boolean $die      If true, PHP code exection will stop
- *
- * @return void
- *
  * @since 2.0.0
+ *
+ * @param string|null $location The path to redirect to.
+ * @param int         $status   Status code to use.
+ * @param boolean     $die      If true, PHP code exection will stop.
  */
-function pods_redirect( $location, $status = 302, $die = true ) {
+function pods_redirect( $location = null, $status = 302, $die = true ) {
+	if ( empty( $location ) ) {
+		$location = $_SERVER['REQUEST_URI'];
+	}
+
 	if ( ! headers_sent() ) {
 		wp_redirect( $location, $status );
 		if ( $die ) {
@@ -2708,6 +2829,8 @@ function pods_register_type( $type, $name, $object = null ) {
 		pods_register_field( $object['name'], $field['name'], $field );
 	}
 
+	pods_meta()->setup_hooks( $object );
+
 	return $registered;
 }
 
@@ -2820,7 +2943,7 @@ function pods_register_group( array $group, $pod, array $fields = [] ) {
 	pods_register_object( $group, 'group' );
 
 	foreach ( $fields as $field ) {
-		pods_register_group_field( $field, $group['name'], $pod_name );
+		pods_register_group_field( $field, $group['name'], $pod );
 	}
 
 	return true;
@@ -2838,10 +2961,11 @@ function pods_register_group( array $group, $pod, array $fields = [] ) {
  * @return true|WP_Error True if successful, or else an WP_Error with the problem.
  */
 function pods_register_group_field( array $field, $group, $pod ) {
-	$pod_name = is_string( $pod ) ? $pod : $pod['name'];
+	$pod_name   = is_string( $pod ) ? $pod : $pod['name'];
+	$group_name = is_string( $group ) ? $group : $group['name'];
 
 	$field['parent'] = 'pod/' . $pod_name;
-	$field['group']  = $group;
+	$field['group']  = $group_name;
 
 	pods_register_object( $field, 'field' );
 
@@ -3114,16 +3238,15 @@ function pods_meta_hook_list( $object_type = 'post', $object = null ) {
 		'action' => [],
 	];
 
-	// If Pods is not being used for any fields, bypass all hooks.
-	if ( pods_is_types_only() ) {
-		return $hooks;
-	}
+	// If Pods is not being used for any fields, bypass all hooks not needed.
+	$is_types_only = pods_is_types_only();
 
 	$first_pods_version = get_option( 'pods_framework_version_first' );
 	$first_pods_version = '' === $first_pods_version ? PODS_VERSION : $first_pods_version;
 
-	$metadata_integration = 1 === (int) pods_get_setting( 'metadata_integration', 1 );
-	$watch_changed_fields = 1 === (int) pods_get_setting( 'watch_changed_fields', version_compare( $first_pods_version, '2.8.21', '<=' ) ? 1 : 0 );
+	$metadata_integration = ! $is_types_only && 1 === (int) pods_get_setting( 'metadata_integration', 1 );
+	$watch_changed_fields = ! $is_types_only && 1 === (int) pods_get_setting( 'watch_changed_fields', version_compare( $first_pods_version, '2.8.21', '<=' ) ? 1 : 0 );
+	$media_modal_fields   = ! $is_types_only && 1 === (int) pods_get_setting( 'media_modal_fields', version_compare( $first_pods_version, '2.9.16', '<=' ) ? 1 : 0 );
 
 	$is_tableless = pods_tableless();
 
@@ -3174,7 +3297,7 @@ function pods_meta_hook_list( $object_type = 'post', $object = null ) {
 		}
 	}
 
-	if ( 'taxonomy' === $object_type || 'all' === $object_type ) {
+	if ( ! $is_types_only && ( 'taxonomy' === $object_type || 'all' === $object_type ) ) {
 		// Handle *_term_meta
 		if ( $metadata_integration && apply_filters( 'pods_meta_handler', true, 'term' ) ) {
 			if ( apply_filters( 'pods_meta_handler_get', true, 'term' ) ) {
@@ -3226,15 +3349,18 @@ function pods_meta_hook_list( $object_type = 'post', $object = null ) {
 		$hooks['action'][] = [ 'split_shared_term', [ PodsInit::$meta, 'split_shared_term' ], 10, 4 ];
 	}
 
-	if ( 'media' === $object_type || 'all' === $object_type ) {
+	if ( ! $is_types_only && ( 'media' === $object_type || 'all' === $object_type ) ) {
 		// Handle old AJAX attachment saving.
 		$hooks['action'][] = [ 'wp_ajax_save-attachment-compat', [ PodsInit::$meta, 'save_media_ajax' ], 0, 1 ];
 
-		// Handle showing meta fields in modal.
-		$hooks['filter'][] = [ 'attachment_fields_to_edit', [ PodsInit::$meta, 'meta_media' ], 10, 2 ];
+		// Maybe integrate with the media modal.
+		if ( $media_modal_fields ) {
+			// Handle showing meta fields in modal.
+			$hooks['filter'][] = [ 'attachment_fields_to_edit', [ PodsInit::$meta, 'meta_media' ], 10, 2 ];
 
-		// Handle saving meta fields from modal.
-		$hooks['filter'][] = [ 'attachment_fields_to_save', [ PodsInit::$meta, 'save_media' ], 10, 2 ];
+			// Handle saving meta fields from modal.
+			$hooks['filter'][] = [ 'attachment_fields_to_save', [ PodsInit::$meta, 'save_media' ], 10, 2 ];
+		}
 
 		// Handle saving attachment metadata.
 		$hooks['filter'][] = [ 'wp_update_attachment_metadata', [ PodsInit::$meta, 'save_media' ], 10, 2 ];
@@ -3253,7 +3379,7 @@ function pods_meta_hook_list( $object_type = 'post', $object = null ) {
 		}
 	}
 
-	if ( 'user' === $object_type || 'all' === $object_type ) {
+	if ( ! $is_types_only && ( 'user' === $object_type || 'all' === $object_type ) ) {
 		// Handle *_user_meta.
 		if ( $metadata_integration && apply_filters( 'pods_meta_handler', true, 'user' ) ) {
 			if ( apply_filters( 'pods_meta_handler_get', true, 'user' ) ) {
@@ -3290,7 +3416,7 @@ function pods_meta_hook_list( $object_type = 'post', $object = null ) {
 		}
 	}
 
-	if ( 'comment' === $object_type || 'all' === $object_type ) {
+	if ( ! $is_types_only && ( 'comment' === $object_type || 'all' === $object_type ) ) {
 		if ( $metadata_integration && apply_filters( 'pods_meta_handler', true, 'comment' ) ) {
 			// Handle *_comment_meta
 			if ( apply_filters( 'pods_meta_handler_get', true, 'comment' ) ) {
@@ -3332,7 +3458,7 @@ function pods_meta_hook_list( $object_type = 'post', $object = null ) {
 		}
 	}
 
-	if ( 'settings' === $object_type || 'all' === $object_type ) {
+	if ( ! $is_types_only && ( 'settings' === $object_type || 'all' === $object_type ) ) {
 		// @todo Patch core to provide $option back in filters, patch core to add filter pre_add_option to add_option.
 
 		// Undesirable way to do things which is heavy and requires access to looping through all fields, pulled from PodsMeta::core().
@@ -4230,14 +4356,25 @@ function pods_svg_icon( $icon_path, $default = 'dashicons-database', $mode = 'ba
  *
  * @since 2.8.11
  *
- * @param bool $check_constant_only Whether to only check the constant, unless there's a filter overriding things.
+ * @param bool        $check_constant_only Whether to only check the constant, unless there's a filter overriding things.
+ * @param null|string $content_type        The content type context we are in. If this is a _pods_* content type, this will enable types for internal purposes.
  *
  * @return bool Whether Pods is being used for content types only.
  */
-function pods_is_types_only( $check_constant_only = false ) {
+function pods_is_types_only( $check_constant_only = false, $content_type = null ) {
+	if (
+		$content_type
+		&& (
+			0 === strpos( $content_type, '_pods_' )
+			|| 0 === strpos( $content_type, 'pod/_pods_' )
+		)
+	) {
+		return false;
+	}
+
 	// Check if Pods is only being used for content types only.
-	if ( defined( 'PODS_META_TYPES_ONLY' ) && PODS_META_TYPES_ONLY ) {
-		return true;
+	if ( defined( 'PODS_META_TYPES_ONLY' ) ) {
+		return filter_var( PODS_META_TYPES_ONLY, FILTER_VALIDATE_BOOLEAN );
 	}
 
 	// Return null we want to only check the constant, unless there's a filter overriding things.
@@ -4253,7 +4390,8 @@ function pods_is_types_only( $check_constant_only = false ) {
 	 *
 	 * @since 2.8.11
 	 *
-	 * @param bool $is_types_only Whether Pods is being used for content types only.
+	 * @param bool        $is_types_only Whether Pods is being used for content types only.
+	 * @param null|string $content_type The content type context we are in.
 	 */
 	return (bool) apply_filters( 'pods_is_types_only', $is_types_only );
 }
@@ -4277,4 +4415,43 @@ function pods_container( $slug_or_class = null ) {
 	}
 
 	return call_user_func_array( 'tribe', func_get_args() );
+}
+
+/**
+ * Set up the container callback and return it.
+ *
+ * @since 2.9.18
+ *
+ * @param  string $slug_or_class A class or interface fully qualified name or a string slug.
+ * @param  string $method        The method that should be called on the resolved implementation with the
+ *                               specified array arguments.
+ * @param  mixed  [$argsN]       (optional) Any number of arguments that will be passed down to the Callback.
+ *
+ * @return callable|null A PHP Callable based on the Slug and Methods passed or null if the function does not exist yet.
+ */
+function pods_container_callback( $slug_or_class, $method ) {
+	if ( ! function_exists( 'tribe_callback' ) ) {
+		_doing_it_wrong( __FUNCTION__, 'The function tribe_callback() is not defined yet, there may be a problem loading the Tribe Common library.', '2.8.17' );
+
+		return null;
+	}
+
+	return call_user_func_array( 'tribe_callback', func_get_args() );
+}
+
+/**
+ * Register the service provider.
+ *
+ * @since 2.9.18
+ *
+ * @param  string $provider_class The full class name for the service provider.
+ */
+function pods_container_register_service_provider( $provider_class ) {
+	if ( ! function_exists( 'tribe_register_provider' ) ) {
+		_doing_it_wrong( __FUNCTION__, 'The function tribe_register_provider() is not defined yet, there may be a problem loading the Tribe Common library.', '2.8.17' );
+
+		return;
+	}
+
+	call_user_func_array( 'tribe_register_provider', func_get_args() );
 }

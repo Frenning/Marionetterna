@@ -4,6 +4,7 @@ use Pods\Admin\Config\Pod as Config_Pod;
 use Pods\Admin\Config\Group as Config_Group;
 use Pods\Admin\Config\Field as Config_Field;
 use Pods\Admin\Settings;
+use Pods\Tools\Repair;
 use Pods\Whatsit\Pod;
 
 /**
@@ -316,7 +317,7 @@ class PodsAdmin {
 								)
 							);
 						}//end if
-					} else {
+					} elseif ( 1 === (int) pods_v( 'use_submenu_fallback', $pod['options'], 1 ) ) {
 						$submenu[] = $pod;
 					}//end if
 				}//end foreach
@@ -724,7 +725,7 @@ class PodsAdmin {
 		// @codingStandardsIgnoreLine
 		$pod_name = str_replace( array( 'pods-manage-', 'pods-add-new-' ), '', $_GET['page'] );
 
-		$pod = pods( $pod_name, pods_v( 'id', 'get', null, true ) );
+		$pod = pods_get_instance( $pod_name, pods_v( 'id', 'get', null, true ) );
 
 		if ( ! $pod->pod_data->has_fields() ) {
 			pods_message( __( 'This Pod does not have any fields defined.', 'pods' ), 'error' );
@@ -748,7 +749,7 @@ class PodsAdmin {
 		// @codingStandardsIgnoreLine
 		$pod_name = str_replace( 'pods-settings-', '', $_GET['page'] );
 
-		$pod = pods( $pod_name );
+		$pod = pods_get_instance( $pod_name );
 
 		if ( 'custom' !== pods_v( 'ui_style', $pod->pod_data['options'], 'settings', true ) ) {
 			$actions_disabled = array(
@@ -769,7 +770,7 @@ class PodsAdmin {
 			$ui = array(
 				'pod'              => $pod,
 				'fields'           => array(
-					'edit' => $pod->pod_data['fields'],
+					'edit' => $pod->pod_data->get_fields(),
 				),
 				'header'           => array(
 					'edit' => $page_title,
@@ -805,6 +806,9 @@ class PodsAdmin {
 	 * @return string
 	 */
 	public function media_button( $context = null ) {
+		if ( ! empty( $_GET['action'] ) && 'elementor' === $_GET['action'] ) {
+			return '';
+		}
 
 		// If shortcodes are disabled don't show the button
 		if ( defined( 'PODS_DISABLE_SHORTCODE' ) && PODS_DISABLE_SHORTCODE ) {
@@ -999,6 +1003,14 @@ class PodsAdmin {
 			$pod_type_label = null;
 			$pod_storage    = $pod['storage'];
 
+			if ( empty( $pod_type ) || ! is_string( $pod_type ) ) {
+				$pod_type = 'post_type';
+			}
+
+			if ( empty( $pod_storage ) || ! is_string( $pod_storage ) ) {
+				$pod_storage = 'meta';
+			}
+
 			$show_meta_count = 'meta' === $pod_storage || in_array( $pod['type'], [ 'post_type', 'taxonomy', 'user', 'comment' ], true );
 
 			if ( ! empty( $pod['internal'] ) ) {
@@ -1066,7 +1078,7 @@ class PodsAdmin {
 			$group_count = 0;
 			$field_count = 0;
 
-			if ( ! pods_is_types_only() ) {
+			if ( ! pods_is_types_only( false, $pod->get_name() ) ) {
 				$group_count = $pod->count_groups();
 				$field_count = $pod->count_fields();
 			}
@@ -1182,7 +1194,7 @@ class PodsAdmin {
 				'pod_object' => $pod,
 			];
 
-			if ( ! pods_is_types_only() ) {
+			if ( ! pods_is_types_only( false, $pod['name'] ) ) {
 				$pod['group_count'] = number_format_i18n( $group_count );
 				$pod['field_count'] = number_format_i18n( $field_count );
 
@@ -1393,6 +1405,11 @@ class PodsAdmin {
 	 * @return array List of callouts.
 	 */
 	public function get_callouts() {
+		// Demo mode always bypasses callouts.
+		if ( pods_is_demo() ) {
+			return [];
+		}
+
 		$force_callouts = false;
 
 		$page = pods_v( 'page' );
@@ -1430,20 +1447,26 @@ class PodsAdmin {
 	 * @since 2.7.17
 	 */
 	public function handle_callouts_updates() {
+		// Don't show callouts right now until Pods 3.0.
+		return;
+
 		$callouts = get_option( 'pods_callouts' );
 
 		if ( ! $callouts ) {
 			$callouts = array();
 		}
 
-		$disable_pods = pods_v( 'pods_callout_dismiss' );
+		$callout_dismiss = pods_v( 'pods_callout_dismiss' );
+
+		// Demo mode will auto-update the option for future loads.
+		$is_demo = pods_is_demo();
 
 		// Disable Friends of Pods callout.
-		if ( 'friends_2022_30' === $disable_pods ) {
+		if ( $is_demo || 'friends_2022_30' === $callout_dismiss ) {
 			$callouts['friends_2022_30'] = 0;
 
 			update_option( 'pods_callouts', $callouts );
-		} elseif ( 'reset' === $disable_pods ) {
+		} elseif ( 'reset' === $callout_dismiss ) {
 			$callouts = array();
 
 			update_option( 'pods_callouts', $callouts );
@@ -1539,8 +1562,12 @@ class PodsAdmin {
 		$original_field_count = 0;
 
 		foreach ( $obj->data as $row ) {
-			if ( $row['id'] === $obj->id ) {
-				$original_field_count = $row['field_count'];
+			if ( (int) $row['id'] === (int) $obj->id ) {
+				if ( ! isset( $row['field_count'] ) ) {
+					$row['field_count'] = 0;
+				}
+
+				$original_field_count = (int) $row['field_count'];
 
 				break;
 			}
@@ -1583,18 +1610,19 @@ class PodsAdmin {
 			'include_fields'       => false,
 		] );
 
-		if ( ! $migrated ) {
-			$group_field_count = wp_list_pluck( $current_pod['groups'], 'fields' );
-			$group_field_count = array_map( 'count', $group_field_count );
-			$group_field_count = array_sum( $group_field_count );
+		$group_field_count = wp_list_pluck( $current_pod['groups'], 'fields' );
+		$group_field_count = array_map( 'count', $group_field_count );
+		$group_field_count = array_sum( $group_field_count );
 
-			if ( $original_field_count !== $group_field_count ) {
+		// Detect if there may be a migration/repair needed.
+		if ( $original_field_count !== $group_field_count ) {
+			if ( ! $migrated ) {
 				$pod = $this->maybe_migrate_pod_fields_into_group( $pod );
 
 				// Check again in case the pod migrated wrong.
 				if ( ! $pod instanceof Pod ) {
-					$obj->id = null;
-					$obj->row = [];
+					$obj->id     = null;
+					$obj->row    = [];
 					$obj->action = 'manage';
 
 					$obj->error( __( 'Invalid Pod configuration detected.', 'pods' ) );
@@ -1602,6 +1630,14 @@ class PodsAdmin {
 
 					return null;
 				}
+
+				$current_pod = $pod->export( [
+					'include_groups'       => true,
+					'include_group_fields' => true,
+					'include_fields'       => false,
+				] );
+			} else {
+				pods_message( __( 'You may need to repair this Pod, we detected some fields not assigned to the groups shown in this configuration. You can find the tool at Pods Admin > Settings > Tools.', 'pods' ) );
 			}
 		}
 
@@ -1727,136 +1763,53 @@ class PodsAdmin {
 	 * @return Pod The pod object.
 	 */
 	public function maybe_migrate_pod_fields_into_group( $pod ) {
-		$groups = $pod->get_groups( [
-			'fallback_mode' => false,
-		] );
+		$tool = pods_container( Repair::class );
 
-		$check_orphan_fields = ! $groups;
+		$results = $tool->repair_groups_and_fields_for_pod( $pod, 'upgrade' );
 
-		$api = pods_api();
-
-		$group_id = null;
-
-		// Only migrate if there are no groups or orphan fields.
-		if ( ! $check_orphan_fields ) {
-			$has_orphan_fields = $pod->has_fields( [
-				'fallback_mode' => false,
-				'group'         => null,
-			] );
-
-			if ( ! $has_orphan_fields ) {
-				$pod->set_arg( '_migrated_28', 1 );
-
-				try {
-					$api->save_pod( $pod );
-				} catch ( Exception $exception ) {
-					// Nothing to do for now.
-				}
-
-				$pod->flush();
-
-				return $pod;
-			}
-
-			$groups = wp_list_pluck( $groups, 'id' );
-			$groups = array_filter( $groups );
-
-			// Get the first group ID.
-			if ( ! empty( $groups ) ) {
-				$group_id = reset( $groups );
+		if ( '' !== $results['message_html'] ) {
+			if ( 'pods' === pods_v( 'page' ) && 'edit' === pods_v( 'action' ) && 'create' === pods_v( 'do' ) ) {
+				// Refresh the page if we just added the Pod.
+				pods_redirect();
+			} else {
+				pods_message( $results['message_html'] );
 			}
 		}
 
-		$fields = $pod->get_fields( [
-			'fallback_mode' => false,
-			'group'         => null,
-		] );
-
-		if ( empty( $group_id ) ) {
-			$label = __( 'Details', 'pods' );
-
-			if ( in_array( $pod->get_type(), [ 'post_type', 'taxonomy', 'user', 'comment', 'media' ], true ) ) {
-				$label = __( 'More Fields', 'pods' );
-			}
-
-			/**
-			 * Filter the title of the Pods Metabox used in the post editor.
-			 *
-			 * @since unknown
-			 *
-			 * @param string  $title  The title to use, default is 'More Fields'.
-			 * @param obj|Pod $pod    Current Pods Object.
-			 * @param array   $fields Array of fields that will go in the metabox.
-			 * @param string  $type   The type of Pod.
-			 * @param string  $name   Name of the Pod.
-			 */
-			$label = apply_filters( 'pods_meta_default_box_title', $label, $pod, $fields, $pod->get_type(), $pod->get_name() );
-			$name  = sanitize_key( pods_js_name( sanitize_title( $label ) ) );
-
-			// Setup first group.
-			$group_id = $api->save_group( [
-				'pod'    => $pod,
-				'name'   => $name,
-				'label'  => $label,
-			] );
-		}
-
-		foreach ( $fields as $field ) {
-			$api->save_field( [
-				'id'           => $field->get_id(),
-				'pod_data'     => $pod,
-				'field'        => $field,
-				'new_group_id' => $group_id,
-			], false );
-
-			$field->set_arg( 'group_id', $group_id );
-		}
-
-		$pod->set_arg( '_migrated_28', 1 );
-
-		$api->save_pod( $pod );
-
-		$pod->flush();
-
-		$api->cache_flush_pods( $pod );
-
-		// Refresh pod object.
-		$pod->flush();
-
-		return $pod;
+		return $results['upgraded_pod'];
 	}
 
 	/**
 	 * Get the global config for Pods admin.
 	 *
-	 * @since 2.8.0
-	 *
-	 * @param null|\Pods\Whatsit $pod
+	 * @param null|\Pods\Whatsit $current_pod
 	 *
 	 * @return array Global config array.
+	 *@since 2.8.0
+	 *
 	 */
-	public function get_global_config( $pod = null ) {
+	public function get_global_config( $current_pod = null ) {
 		$config_pod   = pods_container( Config_Pod::class );
 		$config_group = pods_container( Config_Group::class );
 		$config_field = pods_container( Config_Field::class );
 
 		// Pod: Backwards compatible configs and hooks.
-		$pod_tabs        = $config_pod->get_tabs( $pod );
-		$pod_tab_options = $config_pod->get_fields( $pod, $pod_tabs );
+		$pod_tabs        = $config_pod->get_tabs( $current_pod);
+		$pod_tab_options = $config_pod->get_fields( $current_pod, $pod_tabs );
 
 		$this->backcompat_convert_tabs_to_groups( $pod_tabs, $pod_tab_options, 'pod/_pods_pod' );
 
 		// If not types-only mode, handle groups/fields configs.
-		if ( ! pods_is_types_only() ) {
+		if ( ! pods_is_types_only( false, $current_pod->get_name() ) ) {
 			// Group: Backwards compatible methods and hooks.
-			$group_tabs        = $config_group->get_tabs( $pod );
-			$group_tab_options = $config_group->get_fields( $pod, $group_tabs );
+			$group_tabs        = $config_group->get_tabs( $current_pod);
+			$group_tab_options = $config_group->get_fields( $current_pod, $group_tabs );
 
 			$this->backcompat_convert_tabs_to_groups( $group_tabs, $group_tab_options, 'pod/_pods_group' );
 
 			// Field: Backwards compatible methods and hooks.
-			$field_tabs        = $config_field->get_tabs( $pod );
-			$field_tab_options = $config_field->get_fields( $pod, $field_tabs );
+			$field_tabs        = $config_field->get_tabs( $current_pod);
+			$field_tab_options = $config_field->get_fields( $current_pod, $field_tabs );
 
 			$this->backcompat_convert_tabs_to_groups( $field_tabs, $field_tab_options, 'pod/_pods_field' );
 		}
@@ -1882,8 +1835,8 @@ class PodsAdmin {
 			'name'        => '_pods_field',
 		] );
 
-		$pod = [
-			'showFields' => ! pods_is_types_only(),
+		$global_config = [
+			'showFields' => ! pods_is_types_only( false, $current_pod->get_name() ),
 			'pod'        => $pod_object->export( [
 				'include_groups'       => true,
 				'include_group_fields' => true,
@@ -1907,11 +1860,12 @@ class PodsAdmin {
 		/**
 		 * Allow hooking into the global config setup for a Pod.
 		 *
-		 * @param null|\Pods\Whatsit $pod The Pod object.
+		 * @param array              $global_config The global config object.
+		 * @param null|\Pods\Whatsit $current_pod   The Pod object.
 		 */
-		$pod = apply_filters( 'pods_admin_setup_global_config', $pod );
+		$global_config = apply_filters( 'pods_admin_setup_global_config', $global_config, $current_pod );
 
-		return $pod;
+		return $global_config;
 	}
 
 	/**
@@ -2299,6 +2253,34 @@ class PodsAdmin {
 				$meta[] = '<a href="' . $component_data['URI'] . '">' . __( 'Visit component site', 'pods' ) . '</a>';
 			}
 
+			if ( pods_is_truthy( pods_v( 'Deprecated', $component_data, false ) ) ) {
+				$deprecated = __( 'Deprecated', 'pods' );
+
+				$component_data['Name'] .= sprintf(
+					' <em style="font-weight: normal; color:#333;">(%s)</em>',
+					$deprecated
+				);
+
+				$deprecated_in_version      = pods_v( 'DeprecatedInVersion', $component_data );
+				$deprecated_removal_version = pods_v( 'DeprecatedRemovalVersion', $component_data );
+
+				if ( empty( $deprecated_removal_version ) ) {
+					// translators: TBD means To Be Determined.
+					$deprecated_removal_version = __( 'TBD', 'pods' );
+				}
+
+				if ( $deprecated_in_version ) {
+					$deprecated = sprintf(
+					// translators: %1$s is the version the deprecation starts and %2$s is the version the code will be removed.
+						__( 'Deprecated in %1$s, will be removed in %2$s', 'pods' ),
+						$deprecated_in_version,
+						$deprecated_removal_version
+					);
+				}
+
+				$meta[] = $deprecated;
+			}
+
 			$component_data['Description'] = wpautop( trim( make_clickable( strip_tags( $component_data['Description'], 'em,strong' ) ) ) );
 
 			if ( ! empty( $meta ) ) {
@@ -2559,7 +2541,6 @@ class PodsAdmin {
 	 * Get the admin help page
 	 */
 	public function admin_help() {
-
 		// Add our custom callouts.
 		$this->handle_callouts_updates();
 
@@ -2609,7 +2590,7 @@ class PodsAdmin {
 			} elseif ( 'post_type' === $pod['type'] ) {
 				$capability_type = pods_v_sanitized( 'capability_type_custom', $pod['options'], pods_v( 'name', $pod ) );
 
-				if ( 'custom' === pods_v( 'capability_type', $pod['options'] ) && 0 < strlen( $capability_type ) ) {
+				if ( 'custom' === pods_v( 'capability_type', $pod['options'] ) && is_string( $capability_type ) && 0 < strlen( $capability_type ) ) {
 					$capabilities[] = 'read_' . $capability_type;
 					$capabilities[] = 'edit_' . $capability_type;
 					$capabilities[] = 'delete_' . $capability_type;
@@ -3055,6 +3036,7 @@ class PodsAdmin {
 				'label'             => __( 'Field Mode', 'pods' ),
 				'help'              => __( 'Specify how you would like your values returned in the REST API responses. If you choose to show Both raw and rendered values then an object will be returned for each field that contains the value and rendered properties.', 'pods' ),
 				'type'              => 'pick',
+				'pick_format_single' => 'dropdown',
 				'default'           => 'value',
 				'depends-on'        => [ 'rest_enable' => true ],
 				'data'       => [
@@ -3103,6 +3085,7 @@ class PodsAdmin {
 				'label'      => __( 'Response Type', 'pods' ),
 				'help'       => __( 'This will determine what amount of data for the related items will be returned.', 'pods' ),
 				'type'       => 'pick',
+				'pick_format_single' => 'dropdown',
 				'default'    => 'array',
 				'depends-on' => [
 					'type' => 'pick',
@@ -3191,6 +3174,8 @@ class PodsAdmin {
 
 		$fields = $settings->get_setting_fields();
 
+		$settings_values = $settings->get_settings();
+
 		$auto_start = pods_v( $auto_start, $fields['session_auto_start']['data'], __( 'Unknown', 'pods' ) );
 
 		global $wpdb;
@@ -3261,7 +3246,7 @@ class PodsAdmin {
 				],
 				'pods-memory-current-usage'          => [
 					'label' => __( 'Current Memory Usage', 'pods' ),
-					'value' => number_format_i18n( memory_get_usage() / 1024 / 1024, 3 ) . 'M',
+					'value' => number_format_i18n( memory_get_usage() / 1024 / 1024, 3 ) . 'M' . ( defined( 'WP_MEMORY_LIMIT' ) ? ' / ' . WP_MEMORY_LIMIT : '' ),
 				],
 				'pods-memory-current-usage-real'     => [
 					'label' => __( 'Current Memory Usage (real)', 'pods' ),
@@ -3286,6 +3271,10 @@ class PodsAdmin {
 				'pods-relationship-table-enabled'    => [
 					'label' => __( 'Pods Relationship Table Enabled', 'pods' ),
 					'value' => ( pods_podsrel_enabled() ) ? __( 'Yes', 'pods' ) : __( 'No', 'pods' ),
+				],
+				'pods-relationship-table-status'              => [
+					'label' => __( 'Pods Relationship Table Count' ),
+					'value' => ( ! pods_tableless() ? number_format( (float) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}podsrel" ) ) : 'No table' ),
 				],
 				'pods-light-mode'                    => [
 					'label' => __( 'Pods Light Mode Activated', 'pods' ),
@@ -3315,12 +3304,41 @@ class PodsAdmin {
 					'label' => __( 'Pods Can Use Sessions' ),
 					'value' => ( pods_can_use_sessions( true ) ) ? __( 'Yes', 'pods' ) : __( 'No', 'pods' ),
 				],
-				'pods-relationship-table-status'              => [
-					'label' => __( 'Pods Relationship Table Count' ),
-					'value' => ( ! pods_tableless() ? number_format( (float) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}podsrel" ) ) : 'No table' ),
-				],
 			],
 		];
+
+		$settings_to_show = [
+			'types_only'            => __( 'Setting: Types only', 'pods' ),
+			'watch_changed_fields'  => __( 'Setting: Watch Changed fields', 'pods' ),
+			'metadata_integration'  => __( 'Setting: Watch WP Metadata calls', 'pods' ),
+			'metadata_override_get' => __( 'Setting: Override WP Metadata values', 'pods' ),
+		];
+
+		foreach ( $settings_to_show as $setting => $label ) {
+			$setting_key = 'pods-settings-' . sanitize_title_with_dashes( $setting );
+
+			$value = ucwords(
+				str_replace(
+					[ '_', '-' ],
+					' ',
+					(string) pods_v( $setting, $settings_values, __( 'Unknown', 'pods' )
+					)
+				)
+			);
+
+			if ( '0' === $value ) {
+				$value = __( 'No', 'pods' );
+			} elseif ( '1' === $value ) {
+				$value = __( 'Yes', 'pods' );
+			}
+
+			$info['pods']['fields'][ $setting_key ] = [
+				'label' => $label,
+				'value' => $value,
+			];
+		}
+
+		// @todo Later we should add which components are active.
 
 		return $info;
 	}
@@ -3410,7 +3428,13 @@ class PodsAdmin {
 		$page = isset( $_GET['page'] ) ? $_GET['page'] : '';
 
 		// We only show on the plugins.php page or on Pods Admin pages.
-		if ( ( 'plugins.php' !== $pagenow && 0 !== strpos( $page, 'pods' ) ) || 0 === strpos( $page, 'pods-content' ) ) {
+		if (
+			(
+				'plugins.php' !== $pagenow
+				&& 0 !== strpos( $page, 'pods' )
+			)
+			|| 0 === strpos( $page, 'pods-manage-' )
+		) {
 			return false;
 		}
 
