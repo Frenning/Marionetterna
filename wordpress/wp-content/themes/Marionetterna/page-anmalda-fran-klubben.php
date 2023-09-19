@@ -11,7 +11,6 @@ get_header(); ?>
 		?>
 	</div><!--content-inside-->
 </div><!-- #primary -->
-<?php get_sidebar(); ?>
 <?php get_footer(); ?>
 
 

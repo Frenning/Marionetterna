@@ -22,7 +22,4 @@ get_header(); ?>
     </div>
   </div>
 </div>
-<div class="row">
-  <?php get_sidebar();?>
-</div>
 <?php get_footer(); ?>

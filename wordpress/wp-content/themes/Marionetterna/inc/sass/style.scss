@@ -249,15 +249,17 @@ body {
   
   /* =Widgets
   ----------------------------------------------- */
-  
   #sidebar {
-    background-color: #000E;
+    margin: auto;
   }
-
+  
   .widget {
+    display: flex;
     color: #000;
-    padding: 10px;
     font-size: 16px;
+    a {
+      margin: auto;
+    }
   }
 
   .widget-area {
@@ -265,6 +267,10 @@ body {
     p {
       color: #FFFE;
     }
+  }
+
+  .thumbnail {
+    margin: auto;
   }
 
   /* Layout */
@@ -304,14 +310,7 @@ body {
   }
   
   .footer-content {
-    > a {
-      float: right;
-    }
-  }
-
-  .footer-content-mid {
-    display: block;
-    padding-left: 75px;
+    margin: auto;
     > p {
       margin: 0 auto;
     }
@@ -322,14 +321,6 @@ body {
       > a {
         margin: 10px 0 0 0;
         float: left;
-      }
-    }
-  
-    .footer-content-mid {
-      display: block;
-      padding-left: 15px;
-      > p { 
-        margin: 0 auto;
       }
     }
   }

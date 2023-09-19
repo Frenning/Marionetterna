@@ -8,43 +8,44 @@
 </div><!-- close .site-content -->
 	<div id="footer-area">
 		<div id="colophon">
+			<div class="row">
+				<?php get_sidebar();?>
+			</div>
 			<div class="container">
-				<div class="row">
-				<div class="footer-content col-md-3 col-sm-6">
-					<?php
-					$param = array(
-						'limit' => -1,
-					);
-					$kontakt = pods('kontakt', $param);
-					?>
-					<?php echo $kontakt->display('content');?>
-				</div>
-				<div class="footer-content footer-content-mid col-md-3 col-sm-6">
-					<?php 
-					$kontakt = pods('kontakt', $id="mail"); 
-					echo $kontakt->display('content');
-					$kontakt = pods('anvandarvillkor', $id="anvandarvillkor"); 
-					echo $kontakt->display('content');
-					$kontakt = pods('anvandarvillkor', $id="personliga-uppgifter"); 
-					echo $kontakt->display('content');
-					?>	
-				</div>
-				<div class="footer-content col-md-3 col-sm-12">
-					<?php
-					$param = array(
-						'limit' => -1,
-					);
+				<div class="row footer-content col-md-8">
+					<div class="footer-content col-md-4 col-sm-6">
+						<?php
+						$param = array(
+							'limit' => -1,
+						);
+						$kontakt = pods('kontakt', $param);
+						?>
+						<?php echo $kontakt->display('content');?>
+					</div>
+					<div class="footer-content col-md-4 col-sm-6">
+						<?php 
+						$kontakt = pods('kontakt', $id="mail"); 
+						echo $kontakt->display('content');
+						$kontakt = pods('anvandarvillkor', $id="anvandarvillkor"); 
+						echo $kontakt->display('content');
+						$kontakt = pods('anvandarvillkor', $id="personliga-uppgifter"); 
+						echo $kontakt->display('content');
+						?>	
+					</div>
+					<div class="footer-content col-md-4 col-sm-12">
+						<?php
+						$param = array(
+							'limit' => -1,
+						);
 
-					$socialmedia = pods('social-media', $param);
-					while ( $socialmedia ->fetch() ) { 
-					?>
-					<a class="social-icons" href="<?php echo $socialmedia->field('medialink'); ?>"><?php echo get_the_post_thumbnail($socialmedia->ID()); ?></a>
-					<?php 
-					} 
-					?>
-				</div>
-				<div class="footer-content col-md-3 hidden-sm-down">
-				</div>
+						$socialmedia = pods('social-media', $param);
+						while ( $socialmedia ->fetch() ) { 
+						?>
+						<a class="social-icons" href="<?php echo $socialmedia->field('medialink'); ?>"><?php echo get_the_post_thumbnail($socialmedia->ID()); ?></a>
+						<?php 
+						} 
+						?>
+					</div>
 				</div>
 			</div>
 			<div class="scroll-to-top"><i class="fa fa-angle-up"></i></div><!-- .scroll-to-top -->
