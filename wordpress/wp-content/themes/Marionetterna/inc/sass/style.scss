@@ -35,10 +35,10 @@ Dazzling is based on Underscores http://underscores.me/, (C) 2012-2017 Automatti
 @import "hamburgers";
 @import "header";
 
-@font-face { font-family: Mooli-Regular; src: url(/inc/fonts/Mooli-Regular.ttf); font-weight: normal; }
+@font-face { font-family: customFont; src: url(../../inc/fonts/Mooli-Regular.ttf) format('truetype'); }
 
 body {
-    font-family: Mooli-Regular;
+    font-family: customFont;
     word-wrap: normal;
     line-height: 1.7;
     font-size: 14px !important;
@@ -84,6 +84,7 @@ body {
     font-size: 42px;
     padding: 10px 0px 10px 0px;
     border-bottom: 1px solid black;
+    text-align: center;
   }
   
   h2, .h2 {
@@ -149,20 +150,18 @@ body {
   }
 
   .backgroundImage {
-    background-image: url("../../assets/images/dance-in-spotlight-left.png"), url("../../assets/images/dance-in-spotlight-right.png");
-    background-attachment: scroll;
+    background-image: url("../../assets/images/marionetterna1-blur.jpeg");
+    background-attachment: fixed;
     background-repeat: no-repeat;
-    background-position: left top, right top;
-    background-size: 30%, 30%;
+    background-size: cover;
   }
 
   #primary {
     position: relative;
-    background-color: #000;
   }
 
   #secondary {
-    background-color: #000;
+
   }
 
   .frontPageButton {
@@ -183,12 +182,14 @@ body {
   }
 
   .pageContent {
-    height: 100%;
+    display: table;
+    height: fit-content;
     min-height: 1020px;
-    margin: auto;
+    margin: 25px auto;
     padding: 25px 10px;
     clear: both;
     background-color: #FFF;
+    border-radius: 25px;
   }
   
   .resultat-scroll {
@@ -262,6 +263,11 @@ body {
     a {
       margin: auto;
     }
+  }
+
+  .wp-block-column.is-vertically-aligned-center
+  {
+    align-self: auto;
   }
 
   .widget-area {

@@ -23,7 +23,7 @@
 </head>
 
 <body>
-<div id="page" class="hfeed site">
+<div id="page" class="hfeed site backgroundImage">
 	<nav class="navbar navbar-default" role="navigation">
 		<div class="container">
 			<div class="navbar-header">
