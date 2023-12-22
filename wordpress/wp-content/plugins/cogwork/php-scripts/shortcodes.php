@@ -1,5 +1,6 @@
 <?php
-
+// Make sure we don't expose any info if called directly
+if (!function_exists('add_action')) { exit('Plugins should not be called directly'); }
 /* 
  * Preview of shortcode doesn't work in Elementor. Leads to page not able to save 
  */

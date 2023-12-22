@@ -280,7 +280,7 @@ class PodsAdmin {
 									if ( 'edit' === pods_v( 'action', 'get', 'manage' ) ) {
 										$all_title = pods_v( 'label_edit_item', $pod['options'], __( 'Edit', 'pods' ) . ' ' . $singular_label );
 									} elseif ( 'add' === pods_v( 'action', 'get', 'manage' ) ) {
-										$all_title = pods_v( 'label_add_new_item', $pod['options'], __( 'Add New', 'pods' ) . ' ' . $singular_label );
+										$all_title = pods_v( 'label_add_new_item', $pod['options'], sprintf( __( 'Add New %s', 'pods' ), $singular_label ) );
 									}
 								}
 
@@ -307,8 +307,8 @@ class PodsAdmin {
 								add_menu_page( $page_title, $menu_label, 'read', $parent_page, '', $menu_icon, $menu_position );
 							}
 
-							$add_title = pods_v( 'label_add_new_item', $pod['options'], __( 'Add New', 'pods' ) . ' ' . $singular_label );
-							$add_label = pods_v( 'label_add_new', $pod['options'], __( 'Add New', 'pods' ) );
+							$add_title = pods_v( 'label_add_new_item', $pod['options'], sprintf( __( 'Add New %s', 'pods' ), $singular_label ) );
+							$add_label = pods_v( 'label_add_new', $pod['options'], sprintf( __( 'Add New %s', 'pods' ), $singular_label ) );
 
 							add_submenu_page(
 								$parent_page, $add_title, $add_label, 'read', $page, array(
@@ -767,7 +767,10 @@ class PodsAdmin {
 			$page_title = pods_v( 'label', $pod->pod_data, ucwords( str_replace( '_', ' ', $pod->pod_data['name'] ) ), true );
 			$page_title = apply_filters( 'pods_admin_menu_page_title', $page_title, $pod->pod_data );
 
+			$pod_pod_name = $pod->pod;
+
 			$ui = array(
+				'id'               => $pod_pod_name,
 				'pod'              => $pod,
 				'fields'           => array(
 					'edit' => $pod->pod_data->get_fields(),
@@ -782,8 +785,6 @@ class PodsAdmin {
 				'icon'             => pods_evaluate_tags( pods_v( 'menu_icon', $pod->pod_data['options'] ), true ),
 				'actions_disabled' => $actions_disabled,
 			);
-
-			$pod_pod_name = $pod->pod;
 
 			$ui = apply_filters( "pods_admin_ui_{$pod_pod_name}", apply_filters( 'pods_admin_ui', $ui, $pod->pod, $pod ), $pod->pod, $pod );
 
@@ -2730,13 +2731,13 @@ class PodsAdmin {
 		$params = (object) $params;
 
 		$methods = array(
-			'add_pod'                 => array( 'priv' => true ),
-			'save_pod'                => array( 'priv' => true ),
-			'load_sister_fields'      => array( 'priv' => true ),
-			'process_form'            => array( 'custom_nonce' => true ),
+			'add_pod'            => array( 'priv' => true ),
+			'save_pod'           => array( 'priv' => true ),
+			'load_sister_fields' => array( 'priv' => true ),
+			'process_form'       => array( 'custom_nonce' => true ),
 			// priv handled through nonce
-							'upgrade' => array( 'priv' => true ),
-			'migrate'                 => array( 'priv' => true ),
+			'upgrade'            => array( 'priv' => true ),
+			'migrate'            => array( 'priv' => true ),
 		);
 
 		/**

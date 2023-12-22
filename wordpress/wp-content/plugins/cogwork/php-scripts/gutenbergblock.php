@@ -1,4 +1,7 @@
 <?php
+// Make sure we don't expose any info if called directly
+if (!function_exists('add_action')) { exit('Plugins should not be called directly'); }
+
 // use the cwConnector.php script to get data for contenType and ContenTypeoptions
 require_once (CW_PHP_CLASSES_DIR . 'cwConnector.php');
 

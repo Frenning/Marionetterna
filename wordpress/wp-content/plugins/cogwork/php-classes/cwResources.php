@@ -19,6 +19,10 @@ class cwResources {
      *
      * Empty values, e.g. NULL, 0, "0" or "", always returns an empty String ("")
      */
+
+
+ 
+
     public static function washCode( $str, $charCase='lower', $allowedSpecialChars='_-.', $newSeparator='firstAllowedSpecialChar', $removeRepeatedChars=false, $returnEmptyStringIfAllEmptyChars=true) {
         
         if (!isset($str)) {
@@ -125,6 +129,33 @@ class cwResources {
         
         return $str;
     }
+
+
+    private function encryptPrivate($data = "", $encryptDecrypt = 'e'){
+		// Set default output value
+		$output = null;
+		// Set secret keys
+		$secret_key = 'da1nasf01a8g^3*s'; // Change this!
+		$secret_iv = 'vca123123id1adf0lad'; // Change this!
+		$key = hash('sha256',$secret_key);
+		$iv = substr(hash('sha256',$secret_iv),0,16);
+		// Check whether encryption or decryption
+		if($encryptDecrypt == 'e'){
+		   // We are encrypting
+		   $output = base64_encode(openssl_encrypt($data,"AES-256-CBC",$key,0,$iv));
+		} else if($encryptDecrypt == 'd'){
+		   // We are decrypting
+		   $output = openssl_decrypt(base64_decode($data),"AES-256-CBC",$key,0,$iv);
+		}
+		// Return the final value
+		return $output;
+   }
+
+   public function encrypt($data, $encryptDecrypt) {
+       return $this->encryptPrivate($data, $encryptDecrypt);
+   }
+
+
     
 }
 

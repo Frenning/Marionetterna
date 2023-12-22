@@ -5,7 +5,7 @@
  Description: Enables shortcodes that loads and displays content from CogWork (MinaAktiviteter/Dans.se/Idrott.se)
  Author: CogWork AB
  Text Domain: cogwork
- Version: 1.7.6
+ Version: 1.8.1
  Author URI: https://minaaktiviteter.se/cogwork/
  */
 
@@ -34,5 +34,7 @@ require_once(CW_PHP_SCRIPTS_DIR.'mediabutton.php');
 require_once(CW_PHP_SCRIPTS_DIR.'shortcodes.php');
 //Add a Gutenberg block to the new WordPress edtior
 require_once(CW_PHP_SCRIPTS_DIR.'gutenbergblock.php');
+//Add options to log in with Mina Aktiviteter
+require_once(CW_PHP_SCRIPTS_DIR.'login.php');
 
 ?>

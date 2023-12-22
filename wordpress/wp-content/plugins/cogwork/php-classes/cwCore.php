@@ -5,7 +5,7 @@ class cwCore {
     private static $acceptedDomains = ["dans.se", "idrott.se", "minaaktiviteter.se"];
     
     public static function init() {
-        self::cwInitGlobalUserOptions();
+        self::cwInitGlobalUserOptions();      
     }
     
     public static function userOrgCode() {
@@ -38,6 +38,37 @@ class cwCore {
         
         return $value;
         
+    }
+
+
+    public static function cwDomainName() {
+      
+
+        $value = "MinaAktiviteter";
+        $options = get_option('cogwork_option'); 
+       
+        if($options && array_key_exists('websiteCode', $options) && $options['websiteCode']) {
+            switch ($options['websiteCode']) {
+                case "dans":
+                    $value = "Dans.se";
+                    break;
+                case "idrott":
+                    $value = "Idrott.se";
+                    break;           
+                  
+            } 
+        }   
+                
+        
+        return $value;
+        
+    }
+	
+	public static function loginMethod() {
+        $value = (string) self::getOption('loginMethod');
+        if (empty($value)) $value = 'wordpress';
+        return $value;
+       
     }
     
     private static function getOption($optionName) {
@@ -76,6 +107,10 @@ class cwCore {
         if (!empty($cwOrgCode)) {
             $GLOBALS[CW_PHP_NAMESPACE]['userOrgCode'] = $cwOrgCode;
         }
+
+        $loginMethod = self::catchAndSaveUserOption('loginMethod');
+        $GLOBALS[CW_PHP_NAMESPACE]['loginMethod'] =  $loginMethod;      
+
     }
     
 }
