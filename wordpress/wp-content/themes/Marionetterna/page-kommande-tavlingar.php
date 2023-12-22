@@ -4,13 +4,16 @@
 */
 
 get_header(); ?>
-<div id="primary" class="content-area col-sm-12 col-md-9">
-	<div class="content-inside col-md-12">
+</div><!-- close .row -->
+</div><!-- close .container -->
+<div class="row">
+  <div id="primary" class="col-md-12">
+    <div class="pageContent col-xl-6 col-lg-7 col-md-8">
+      <h1><?php the_title();?></h1>
 		<?php 
-			read_page_content_from_url('https://dans.se/tools/comp/events/?org=marionetterna');
+				read_page_content_from_url('https://dans.se/tools/comp/events/?org=marionetterna');
 		?>	
-	</div><!--content-inside-->
-</div><!-- #primary -->
+    </div>
+  </div>
+</div>
 <?php get_footer(); ?>
-
-

@@ -17,10 +17,6 @@
             <?php echo $post->post_content; ?>
           </div>
         <?php } ?>
-        <?php $kursURL = get_permalink(get_page_by_title('Kursschema'))?>
-        <button class="frontPageButton">
-          <a href="<?php echo $kursURL?>">Gå till kursschema!</a>
-        </button>  
       </div>
     </div><!--frontPageContent-->
   </div><!-- #primary -->

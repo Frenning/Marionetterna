@@ -25,8 +25,10 @@ get_header(); ?>
 		</div> <!--row-->		
 		<a href="<?php $kontakt = pods('kontakt', $id="adress");
 		echo $kontakt->field('link'); ?>">Större karta</a>
-		<div class="maps-image">
-			<a href="<?php echo $kontakt->field('link'); ?>"><?php echo get_the_post_thumbnail($kontakt->ID()); ?></a>
+		<div class="row">
+			<div class="maps-image">
+				<a href="<?php echo $kontakt->field('link'); ?>"><?php echo get_the_post_thumbnail($kontakt->ID()); ?></a>
+			</div>
 		</div>
 	</div>
 </div><!-- #primary -->
