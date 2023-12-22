@@ -118,6 +118,23 @@
     background-color: rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 1200px) {
+    .navbar-nav > {
+        li > {
+            a {
+                font-size: 18px
+            }
+        }
+    }
+    .navbar > {
+        .container {
+            .navbar-brand {
+                font-size: 18px
+            }
+        }
+    }
+}
+
 @media (max-width: 992px) {
     .dropdown-menu{
         top: 0;

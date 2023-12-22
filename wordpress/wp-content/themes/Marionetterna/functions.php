@@ -68,8 +68,8 @@ function widgets_init() {
   register_sidebar( array(
     'name'          => __( 'Sidebar', 'marionetterna' ),
     'id'            => 'sidebar-1',
-    'before_widget' => '<aside id="%1$s" class="widget %2$s">',
-    'after_widget'  => '</aside>',
+    'before_widget' => '<div id="%1$s" class="widget col-xl-3 col-lg-6 col-sm-12 %2$s">',
+    'after_widget'  => '</div>',
     'before_title'  => '<h3 class="widget-title">',
     'after_title'   => '</h3>',
   ) );

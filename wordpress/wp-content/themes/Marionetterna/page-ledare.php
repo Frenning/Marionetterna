@@ -5,7 +5,7 @@
  ?>
 <?php get_header();?>
 <div id="primary" class="col-md-12">
-    <div class="pageContent col-lg-6 col-md-8 col-sm-12">
+    <div class="pageContent col-xl-6 col-lg-8 col-md-8 col-sm-12">
         <?php
             $param = array(
                 'limit' => -1,
