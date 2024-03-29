@@ -13,6 +13,11 @@
     height: 80px;
     border-radius: 0;
     background-color: #000E;
+    a {
+        &:hover{
+            color: #FFFE;  
+        }
+    }
 }
 
 #menu-header-menu {
