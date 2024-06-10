@@ -237,8 +237,15 @@ class cwConnector {
 	private function loadContent() {
 		$result = null;
 		$url = $this->getJsonDataUrl(true);
+
+	
+
+		// Arguments for the wp_remote_get function
+		$args = array(
+			'timeout' => 30
+		);
 		
-		$response = wp_remote_get($url);
+		$response = wp_remote_get($url, $args);
 
 		// errors check
 		if (is_wp_error($response) ){			
@@ -286,9 +293,12 @@ class cwConnector {
 	
 		$url = $this->getUserLoginUrl($username, $password);
 
-		$result = false;	
+		$result = false;
+		$args = array(
+			'timeout' => 30,
+		);	
 	    
-			$response = wp_remote_get($url);			
+			$response = wp_remote_get($url, $args);			
 
 			if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200  ){			
 				$body = wp_remote_retrieve_body($response);	

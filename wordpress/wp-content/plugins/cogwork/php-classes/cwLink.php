@@ -14,12 +14,13 @@ class cwLink
         $params = $options['params'];
         $flags = $options['flags'];
         $flagsexists = is_array($flags);
-        $paramsUrl = $params['url'];
-
+  
         // return if no url parameter
-        if (empty($paramsUrl)) {
+        if (empty($params['url'])) {
             return '';
         }
+        
+        $paramsUrl = $params['url'];
 
         // change topdomain to cwDomain option if parameter exists
          $topUrl = 'https://' . cwCore::userDomain() . '/';
