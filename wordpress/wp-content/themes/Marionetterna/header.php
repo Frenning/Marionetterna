@@ -29,7 +29,7 @@
 			<div class="navbar-header">
 				<div id="logo">
 					<!--<?php echo is_home() ?  '<h1 class="site-title">' : '<span class="site-title">'; ?> -->
-						<a class="navbar-brand" href="<?php echo esc_url( home_url( '/' ) ); ?>"><img class="logo" src="<?php bloginfo('template_directory'); ?>/assets/images/logo_50x50.png" alt="" /> <title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home"><?php bloginfo( 'name' ); ?></a>
+						<a class="navbar-brand" href="<?php echo esc_url( home_url( '/' ) ); ?>"><img class="logo" src="<?php bloginfo('template_directory'); ?>/assets/images/Marionetterna_logga.png" alt="" /></a>
 					<!--<?php echo is_home() ?  '</h1>' : '</span>'; ?> end of .site-name -->
 				</div><!-- end of #logo -->
 			</div>
