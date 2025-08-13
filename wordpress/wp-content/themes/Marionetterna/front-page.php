@@ -21,11 +21,4 @@
     </div><!--frontPageContent-->
   </div><!-- #primary -->
 </div><!-- close .row -->
-<div class="row">
-  <div id="secondary" class="col-md-12">
-    <div class="pageContent col-xl-6 col-lg-7 col-md-8">
-      <?php echo do_shortcode("[custom-facebook-feed]"); ?>  
-    </div>
-  </div>
-</div>
 <?php get_footer(); ?>
