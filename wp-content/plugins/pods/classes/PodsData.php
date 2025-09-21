@@ -154,6 +154,11 @@ class PodsData {
 	public $search_var = 'search';
 
 	/**
+	 * @var string
+	 */
+	public $filter_var = 'filter';
+
+	/**
 	 * int | text | text_like
 	 *
 	 * @var string
@@ -639,56 +644,124 @@ class PodsData {
 	/**
 	 * Select items, eventually building dynamic query
 	 *
-	 * @param array $params
+	 * @param array|object $params
 	 *
 	 * @return array|bool|mixed
 	 * @since 2.0.0
 	 */
 	public function select( $params ) {
 
+		if ( is_array( $params ) ) {
+			$params = (object) $params;
+		}
+
 		global $wpdb;
 
-		$cache_key = false;
-		$results   = false;
+		$cache_key  = false;
+		$cache_mode = 'cache';
+		$expires    = 0;
+		$results    = false;
+
+		$instance = $this;
 
 		/**
 		 * Filter select parameters before the query
 		 *
-		 * @param array|object    $params
-		 * @param PodsData|object $this The current PodsData class instance.
+		 * @param object   $params
+		 * @param PodsData $instance The current PodsData class instance.
 		 *
 		 * @since unknown
 		 */
-		$params = apply_filters( 'pods_data_pre_select_params', $params, $this );
+		$params = apply_filters( 'pods_data_pre_select_params', $params, $instance );
 
 		// Debug purposes.
 		if ( 1 === (int) pods_v( 'pods_debug_params', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
+			pods_debug( __METHOD__ . ':' . __LINE__ );
 			pods_debug( $params );
 		}
 
-		// Get from cache if enabled.
-		if ( null !== pods_v( 'expires', $params, null, true ) ) {
-			$cache_key = md5( (string) $this->pod . serialize( $params ) );
+		pods_debug_log_data( $params, 'find-params', __METHOD__, __LINE__ );
 
-			$results = pods_view_get( $cache_key, pods_v( 'cache_mode', $params, 'cache', true ), 'pods_data_select' );
+		$debug_sql = ( 1 === (int) pods_v( 'pods_debug_sql', 'get', 0 ) || 1 === (int) pods_v( 'pods_debug_sql_all', 'get', 0 ) ) && pods_is_admin( array( 'pods' ) );
+
+		$total_found_cached = false;
+
+		$is_search = pods_v( $this->search_var );
+
+		// Disable caching for searches.
+		if ( null !== $is_search ) {
+			$params->expires = 0;
+			$params->cache_mode = null;
+		}
+
+		// Get from cache if enabled.
+		if (
+			! $debug_sql
+			&& null === $is_search
+			&& null !== pods_v( 'expires', $params, null, true )
+		) {
+			$cache_key  = md5( (string) $this->pod . serialize( $params ) );
+			$cache_mode = pods_v( 'cache_mode', $params, 'cache', true );
+			$expires    = (int) pods_v( 'expires', $params, 0 );
+
+			$results = pods_view_get( $cache_key, $cache_mode, 'pods_data_select' );
+			$stats   = pods_view_get( $cache_key, $cache_mode, 'pods_data_select_stats' );
 
 			if ( empty( $results ) ) {
 				$results = false;
+			} elseif ( ! empty( $stats ) ) {
+				$this->total_found = $stats->total_found ?? null;
+				$this->limit       = (int) ( $stats->limit ?? 15 );
+				$this->page        = (int) ( $stats->page ?? 1 );
+				$this->offset      = (int) ( $stats->offset ?? 0 );
+
+				if ( null !== $this->total_found ) {
+					$this->total_found_calculated = true;
+
+					$total_found_cached = true;
+				}
+			} else {
+				$params->calc_rows = false;
+
+				// Attempt to calculate total found.
+				$this->sql = $this->build( $params );
+
+				if ( $this->total_sql ) {
+					$this->calculate_totals();
+
+					// Cache if enabled.
+					if ( false !== $cache_key && $this->total_found_calculated ) {
+						$stats = (object) [
+							'total_found' => $this->total_found,
+							'limit'       => $this->limit,
+							'page'        => $this->page,
+							'offset'      => $this->offset,
+						];
+
+						pods_view_set( $cache_key, $stats, $expires, $cache_mode, 'pods_data_select_stats' );
+					}
+				}
 			}
 		}
 
 		if ( empty( $results ) ) {
+			pods_debug_log_data( $params, 'sql-select-params', __METHOD__, __LINE__ );
+
 			// Build.
 			$this->sql = $this->build( $params );
 
 			// Debug purposes.
-			if ( ( 1 === (int) pods_v( 'pods_debug_sql', 'get', 0 ) || 1 === (int) pods_v( 'pods_debug_sql_all', 'get', 0 ) ) && pods_is_admin( array( 'pods' ) ) ) {
+			if ( $debug_sql ) {
+				pods_debug( __METHOD__ . ':' . __LINE__ );
+
 				if ( function_exists( 'codecept_debug' ) ) {
 					pods_debug( $this->get_sql() );
 				} else {
 					echo '<textarea cols="100" rows="24">' . esc_textarea( $this->get_sql() ) . '</textarea>';
 				}
 			}
+
+			pods_debug_log_data( $this->get_sql(), 'sql-select', __METHOD__, __LINE__ );
 
 			if ( empty( $this->sql ) ) {
 				return array();
@@ -697,22 +770,28 @@ class PodsData {
 			// Get Data.
 			$results = pods_query( $this->sql, $this );
 
+			pods_debug_log_data( $results, 'sql-select-results', __METHOD__, __LINE__ );
+
 			// Cache if enabled.
 			if ( false !== $cache_key ) {
-				pods_view_set( $cache_key, $results, (int) pods_v( 'expires', $params, 0, false ), pods_v( 'cache_mode', $params, 'cache', true ), 'pods_data_select' );
+				pods_view_set( $cache_key, $results, $expires, $cache_mode, 'pods_data_select' );
 			}
 		}//end if
+
+		if ( is_object( $results ) ) {
+			$results = get_object_vars( $results );
+		}
 
 		/**
 		 * Filter results of Pods Query
 		 *
-		 * @param array           $results
-		 * @param array|object    $params
-		 * @param PodsData|object $this The current PodsData class instance.
+		 * @param array    $results
+		 * @param object   $params
+		 * @param PodsData $instance The current PodsData class instance.
 		 *
 		 * @since unknown
 		 */
-		$results = apply_filters( 'pods_data_select', $results, $params, $this );
+		$results = (array) apply_filters( 'pods_data_select', $results, $params, $instance );
 
 		// Clean up data we don't want to work with.
 		if (
@@ -738,7 +817,9 @@ class PodsData {
 		$this->row_number = - 1;
 		$this->row        = null;
 
-		$this->total_found_calculated = false;
+		if ( ! $total_found_cached ) {
+			$this->total_found_calculated = false;
+		}
 
 		$this->total = 0;
 
@@ -750,12 +831,12 @@ class PodsData {
 		 * Filters whether the total_found should be calculated right away or not.
 		 *
 		 * @param boolean  $auto_calculate_total_found Whether to auto calculate total_found.
-		 * @param array    $params                     Select parameters.
-		 * @param PodsData $this                       The current PodsData instance.
+		 * @param object   $params                     Select parameters.
+		 * @param PodsData $instance                   The current PodsData instance.
 		 *
 		 * @since 2.7.11
 		 */
-		if ( apply_filters( 'pods_data_auto_calculate_total_found', false, $params, $this ) ) {
+		if ( apply_filters( 'pods_data_auto_calculate_total_found', false, $params, $instance ) ) {
 			// Run the calculation logic.
 			$this->calculate_totals();
 		}
@@ -767,6 +848,10 @@ class PodsData {
 	 * Calculate total found.
 	 */
 	public function calculate_totals() {
+
+		if ( $this->total_found_calculated ) {
+			return;
+		}
 
 		/**
 		 * @var $wpdb wpdb
@@ -1077,8 +1162,11 @@ class PodsData {
 		$params->search = (boolean) $params->search;
 
 		if ( 1 === (int) pods_v( 'pods_debug_params_all', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
+			pods_debug( __METHOD__ . ':' . __LINE__ );
 			pods_debug( $params );
 		}
+
+		pods_debug_log_data( $params, 'find-params', __METHOD__, __LINE__ );
 
 		$params->field_table_alias = 't';
 
@@ -1263,7 +1351,9 @@ class PodsData {
 						$db_field_name = $attributes['real_name'];
 					}
 
-					$filter_clause = "{$db_field_name} LIKE '%" . pods_sanitize_like( $params->search_query ) . "%'";
+					$search_query_sanitized = pods_sanitize_like( $params->search_query );
+
+					$filter_clause = "{$db_field_name} LIKE '%{$search_query_sanitized}%'";
 
 					if ( isset( $attributes['group_related'] ) && false !== $attributes['group_related'] ) {
 						$having[] = $filter_clause;
@@ -1313,7 +1403,7 @@ class PodsData {
 				$filterfield = self::get_db_field( $db_field_params );
 
 				if ( 'pick' === $attributes['type'] ) {
-					$filter_value = pods_v( 'filter_' . $field );
+					$filter_value = pods_v( $this->filter_var . '_' . $field );
 
 					if ( ! is_array( $filter_value ) ) {
 						$filter_value = (array) $filter_value;
@@ -1325,10 +1415,13 @@ class PodsData {
 								continue;
 							}
 
+							$filter_v_sanitized      = pods_sanitize( $filter_v );
+							$filter_v_sanitized_like = pods_sanitize_like( $filter_v );
+
 							if ( isset( $attributes['group_related'] ) && false !== $attributes['group_related'] ) {
-								$having[] = "( {$filterfield} = '" . pods_sanitize( $filter_v ) . "'" . " OR {$filterfield} LIKE '%\"" . pods_sanitize_like( $filter_v ) . "\"%' )";
+								$having[] = "( {$filterfield} = '{$filter_v_sanitized}' OR {$filterfield} LIKE '%\"{$filter_v_sanitized_like}\"%' )";
 							} else {
-								$where[] = "( {$filterfield} = '" . pods_sanitize( $filter_v ) . "'" . " OR {$filterfield} LIKE '%\"" . pods_sanitize_like( $filter_v ) . "\"%' )";
+								$where[] = "( {$filterfield} = '{$filter_v_sanitized}' OR {$filterfield} LIKE '%\"{$filter_v_sanitized_like}\"%' )";
 							}
 						} else {
 							$filter_v = (int) $filter_v;
@@ -1358,8 +1451,8 @@ class PodsData {
 						'datetime',
 					), true
 				) ) {
-					$start_value = pods_v( 'filter_' . $field . '_start', 'get', false );
-					$end_value   = pods_v( 'filter_' . $field . '_end', 'get', false );
+					$start_value = pods_v( $this->filter_var . '_' . $field . '_start', 'get', false );
+					$end_value   = pods_v( $this->filter_var . '_' . $field . '_end', 'get', false );
 
 					if ( empty( $start_value ) && empty( $end_value ) ) {
 						continue;
@@ -1397,16 +1490,18 @@ class PodsData {
 						}
 					}
 				} else {
-					$filter_value = (string) pods_v( 'filter_' . $field, 'get', '' );
+					$filter_value = (string) pods_v( $this->filter_var . '_' . $field, 'get', '' );
 
 					if ( '' === $filter_value ) {
 						continue;
 					}
 
+					$filter_value_sanitized = pods_sanitize_like( $filter_value );
+
 					if ( isset( $attributes['group_related'] ) && false !== $attributes['group_related'] ) {
-						$having[] = "{$filterfield} LIKE '%" . pods_sanitize_like( $filter_value ) . "%'";
+						$having[] = "{$filterfield} LIKE '%{$filter_value_sanitized}%'";
 					} else {
-						$where[] = "{$filterfield} LIKE '%" . pods_sanitize_like( $filter_value ) . "%'";
+						$where[] = "{$filterfield} LIKE '%{$filter_value_sanitized}%'";
 					}
 				}//end if
 
@@ -1645,7 +1740,7 @@ class PodsData {
 				} elseif ( false !== stripos( $sql, ' GROUP BY ' ) ) {
 					$sql = preg_replace( '/\sGROUP BY\s(?!.*\sGROUP BY\s)/i', ' %%WHERE%% GROUP BY ', $sql );
 				} elseif ( false !== stripos( $sql, ' ORDER BY ' ) ) {
-					$sql = preg_replace( '/\ORDER BY\s(?!.*\ORDER BY\s)/i', ' %%WHERE%% ORDER BY ', $sql );
+					$sql = preg_replace( '/\sORDER BY\s(?!.*\sORDER BY\s)/i', ' %%WHERE%% ORDER BY ', $sql );
 				} else {
 					$sql .= ' %%JOIN%% ';
 				}
@@ -1654,7 +1749,7 @@ class PodsData {
 				if ( false !== stripos( $sql, ' GROUP BY ' ) ) {
 					$sql = preg_replace( '/\sGROUP BY\s(?!.*\sGROUP BY\s)/i', ' %%WHERE%% GROUP BY ', $sql );
 				} elseif ( false !== stripos( $sql, ' ORDER BY ' ) ) {
-					$sql = preg_replace( '/\ORDER BY\s(?!.*\ORDER BY\s)/i', ' %%WHERE%% ORDER BY ', $sql );
+					$sql = preg_replace( '/\sORDER BY\s(?!.*\sORDER BY\s)/i', ' %%WHERE%% ORDER BY ', $sql );
 				} else {
 					$sql .= ' %%WHERE%% ';
 				}
@@ -1663,14 +1758,14 @@ class PodsData {
 				if ( false !== stripos( $sql, ' HAVING ' ) ) {
 					$sql = preg_replace( '/\sHAVING\s(?!.*\sHAVING\s)/i', ' %%GROUPBY%% HAVING ', $sql );
 				} elseif ( false !== stripos( $sql, ' ORDER BY ' ) ) {
-					$sql = preg_replace( '/\ORDER BY\s(?!.*\ORDER BY\s)/i', ' %%GROUPBY%% ORDER BY ', $sql );
+					$sql = preg_replace( '/\sORDER BY\s(?!.*\sORDER BY\s)/i', ' %%GROUPBY%% ORDER BY ', $sql );
 				} else {
 					$sql .= ' %%GROUPBY%% ';
 				}
 			}
 			if ( false === stripos( $sql, '%%HAVING%%' ) ) {
 				if ( false !== stripos( $sql, ' ORDER BY ' ) ) {
-					$sql = preg_replace( '/\ORDER BY\s(?!.*\ORDER BY\s)/i', ' %%HAVING%% ORDER BY ', $sql );
+					$sql = preg_replace( '/\sORDER BY\s(?!.*\sORDER BY\s)/i', ' %%HAVING%% ORDER BY ', $sql );
 				} else {
 					$sql .= ' %%HAVING%% ';
 				}
@@ -2162,7 +2257,7 @@ class PodsData {
 					}
 				}
 
-				if ( empty( $this->row ) || is_wp_error( $this->row ) ) {
+				if ( empty( $this->row ) ) {
 					$this->row = false;
 				} else {
 					$current_row_id = (int) $this->row['ID'];
@@ -2229,7 +2324,7 @@ class PodsData {
 					$this->row = get_user_by( 'slug', $id );
 				}
 
-				if ( empty( $this->row ) || is_wp_error( $this->row ) ) {
+				if ( empty( $this->row ) ) {
 					$this->row = false;
 				} else {
 					// Get other vars.
@@ -2254,7 +2349,7 @@ class PodsData {
 				$this->row = get_comment( $id, ARRAY_A );
 
 				// No slug handling here.
-				if ( empty( $this->row ) || is_wp_error( $this->row ) ) {
+				if ( empty( $this->row ) ) {
 					$this->row = false;
 				} else {
 					$current_row_id = (int) $this->row['comment_ID'];
@@ -2282,9 +2377,11 @@ class PodsData {
 					$this->row['option_id'] = $this->id;
 				}
 			} else {
+				$id_int = (int) $id;
+
 				$params = array(
 					'table'   => $this->table,
-					'where'   => "`t`.`{$this->field_id}` = " . (int) $id,
+					'where'   => "`t`.`{$this->field_id}` = {$id_int}",
 					'orderby' => "`t`.`{$this->field_id}` DESC",
 					'page'    => 1,
 					'limit'   => 1,
@@ -2437,7 +2534,7 @@ class PodsData {
 			}
 		}
 
-		if ( pods_is_admin() && 1 === (int) pods_v( 'pods_debug_backtrace' ) ) {
+		if ( 1 === (int) pods_v( 'pods_debug_backtrace' ) && pods_is_admin() ) {
 			ob_start();
 			echo '<pre>';
 			var_dump( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 11 ) );
@@ -2477,10 +2574,12 @@ class PodsData {
 			}
 
 			if ( 1 === (int) pods_v( 'pods_debug_sql_all', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
+				pods_debug( __METHOD__ . ':' . __LINE__ );
 				echo '<textarea cols="100" rows="24">' . esc_textarea( pods_data()->get_sql( $params->sql ) ) . '</textarea>';
 			}
+		}
 
-		}//end if
+		pods_debug_log_data( pods_data()->get_sql( $params->sql ), 'sql-query', __METHOD__, __LINE__ );
 
 		$params->sql = trim( $params->sql );
 
@@ -2506,6 +2605,8 @@ class PodsData {
 		$result = apply_filters( 'pods_data_query_result', $result, $params );
 
 		if ( false === $result && ! empty( $params->error ) && ! empty( $wpdb->last_error ) ) {
+			pods_debug_log_data( "{$params->error}; SQL: {$params->sql}; Response: {$wpdb->last_error}", 'sql-error', __METHOD__, __LINE__ );
+
 			return pods_error( "{$params->error}; SQL: {$params->sql}; Response: {$wpdb->last_error}", $params->display_errors );
 		}
 
@@ -2515,8 +2616,12 @@ class PodsData {
 			$result = (array) $wpdb->last_result;
 
 			if ( ! empty( $result ) && ! empty( $params->results_error ) ) {
+				pods_debug_log_data( "{$params->results_error}; SQL: {$params->sql}", 'sql-results-error', __METHOD__, __LINE__ );
+
 				return pods_error( $params->results_error, $params->display_errors );
 			} elseif ( empty( $result ) && ! empty( $params->no_results_error ) ) {
+				pods_debug_log_data( "{$params->no_results_error}; SQL: {$params->sql}", 'sql-results-error', __METHOD__, __LINE__ );
+
 				return pods_error( $params->no_results_error, $params->display_errors );
 			}
 		}
@@ -3089,7 +3194,9 @@ class PodsData {
 			'NOT LIKE',
 		], true ) ) {
 			if ( $field_sanitize ) {
-				$field_query = "{$field_cast} {$field_compare} '%" . pods_sanitize_like( $field_value ) . "%'";
+				$field_value_sanitized = pods_sanitize_like( $field_value );
+
+				$field_query = "{$field_cast} {$field_compare} '%{$field_value_sanitized}%'";
 			} else {
 				$field_query = "{$field_cast} {$field_compare} '{$field_value}'";
 			}
@@ -3169,11 +3276,11 @@ class PodsData {
 				$field = $data;
 			}
 
-			if ( ! isset( $_GET[ 'filter_' . $field ] ) ) {
+			if ( ! isset( $_GET[ $this->filter_var . '_' . $field ] ) ) {
 				continue;
 			}
 
-			$field_value = pods_v( 'filter_' . $field, 'get', false, true );
+			$field_value = pods_v( $this->filter_var . '_' . $field, 'get', false, true );
 
 			if ( ! empty( $field_value ) || ( is_string( $field_value ) && 0 < strlen( $field_value ) ) ) {
 				$feed[ 'traverse_' . $field ] = array( $field );
@@ -3472,17 +3579,17 @@ class PodsData {
 		$rel_alias = 'rel_' . $field_joined;
 
 		if ( pods_v( 'search', $traverse_recurse['params'], false ) && empty( $traverse_recurse['params']->filters ) ) {
-			if ( 0 < strlen( (string) pods_v( 'filter_' . $field_joined ) ) ) {
-				$val = absint( pods_v( 'filter_' . $field_joined ) );
+			if ( 0 < strlen( (string) pods_v( $this->filter_var . '_' . $field_joined ) ) ) {
+				$val = absint( pods_v( $this->filter_var . '_' . $field_joined ) );
 
 				$search = "`{$field_joined}`.`{$table_info[ 'field_id' ]}` = {$val}";
 
 				if ( 'text' === $this->search_mode ) {
-					$val = pods_v_sanitized( 'filter_' . $field_joined );
+					$val = pods_v_sanitized( $this->filter_var . '_' . $field_joined );
 
 					$search = "`{$field_joined}`.`{$traverse[ 'name' ]}` = '{$val}'";
 				} elseif ( 'text_like' === $this->search_mode ) {
-					$val = pods_sanitize( pods_sanitize_like( pods_v( 'filter_' . $field_joined ) ) );
+					$val = pods_sanitize( pods_sanitize_like( pods_v( $this->filter_var . '_' . $field_joined ) ) );
 
 					$search = "`{$field_joined}`.`{$traverse[ 'name' ]}` LIKE '%{$val}%'";
 				}

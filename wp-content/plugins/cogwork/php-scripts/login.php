@@ -19,17 +19,6 @@ if (is_array($option)  && array_key_exists('loginMethod', $option) && $option['l
   
 }
 
-/* Add action and filters if Mina Aktiviter users exist */
-$args = array(
-  'meta_key'     => 'cwKey',
-);
-
-$users = get_users($args);
-
-if ($users) {
-  add_filter('manage_users_columns', 'cwAddLoginColum');
-  add_filter('manage_users_custom_column', 'cwAddLoginColumData', 10, 3);
-}
 
 function cwLogin($user, $username, $password)
 {
@@ -70,15 +59,29 @@ function cwLoginMethod($user)
 }
 
 
+// Add column to show is the user 
+add_action('current_screen', 'cwUpdateLoginColumns');
 
+function cwUpdateLoginColumns($screen) {
+    // Only run ofor admin users on the Users list admin page
+    if (current_user_can('manage_options') && isset($screen) && isset($screen->base) && $screen->base === 'users') {
+        $args = array(
+            'meta_key' => 'cwKey',
+            'fields' => 'ids',
+        );
 
-/* Create   */
+        $users = get_users($args);
 
+        if (!empty($users)) {
+            add_filter('manage_users_columns', 'cwAddLoginColum');
+            add_filter('manage_users_custom_column', 'cwAddLoginColumData', 10, 3);
+        }
+    }
+}
 
 function cwAddLoginColum($columns)
 {
 
-  // unset( $columns['posts'] ); // maybe you would like to remove default columns
   $columns['loginMethod'] = __('Login method','cogwork'); // add new
 
   return $columns;
@@ -92,17 +95,14 @@ function cwAddLoginColumData($row_output, $column_id_attr, $user)
 {
 
 
-  if ($column_id_attr == 'loginMethod') {
+  if ($column_id_attr === 'loginMethod') {
 
     if (get_the_author_meta('cwKey', $user)) {
-
       $row_output  = cwCore::cwDomainName();
     } else {
       $row_output = "WordPress";
     }
   }
-
-
   return $row_output;
 }
 

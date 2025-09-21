@@ -78,7 +78,11 @@ class Pods_Pages extends PodsComponent {
 	 * {@inheritdoc}
 	 */
 	public function init() {
-		$this->register_config();
+		if ( ! did_action( 'init' ) ) {
+			add_action( 'init', [ $this, 'register_config' ] );
+		} else {
+			$this->register_config();
+		}
 
 		add_shortcode( 'pods-content', array( $this, 'shortcode' ) );
 
@@ -132,7 +136,7 @@ class Pods_Pages extends PodsComponent {
 			$args['capability_type'] = $this->capability_type;
 		}
 
-		$args = PodsInit::object_label_fix( $args, 'post_type' );
+		$args = PodsInit::object_label_fix( $args, 'post_type', $this->object_type );
 
 		register_post_type( $this->object_type, apply_filters( 'pods_internal_register_post_type_object_page', $args ) );
 
@@ -173,7 +177,7 @@ class Pods_Pages extends PodsComponent {
 				$page_templates[ $page_template . ' - ' . $file ] = $file;
 			}
 
-			$page_templates[ __( '-- Select a Page Template --', 'pods' ) ] = '';
+			$page_templates[ __( '-- Select a WP Page Template --', 'pods' ) ] = '';
 
 			$page_templates[ __( 'Custom (uses only Pod Page content)', 'pods' ) ] = '_custom';
 
@@ -201,6 +205,29 @@ class Pods_Pages extends PodsComponent {
 				'type'  => 'text',
 			],
 			[
+				'name'         => 'code_php_notice',
+				'type'         => 'html',
+				'html_content' => sprintf(
+					'
+						<div class="pods-ui-notice-admin pods-ui-notice-warning">
+							<p>⚠️&nbsp;&nbsp;%1$s</p>
+							<p><a href="%2$s" target="_blank" rel="noopener noreferrer">%3$s</a> | <a href="%4$s" target="_blank" rel="noopener noreferrer">%5$s</a></p>
+						</div>
+					',
+					esc_html__( 'PHP detected, this feature is deprecated', 'pods' ),
+					'https://docs.pods.io/displaying-pods/pod-page-template-hierarchy-for-themes/',
+					esc_html__( 'Read more about file-based templates', 'pods' ),
+					admin_url( 'admin.php?page=pods-components' ),
+					esc_html__( 'Switch to file-based Pod Pages using our Migrate PHP into File-based templates component', 'pods' )
+				),
+				'wildcard-on'  => [
+					'code' => [
+						'\?>',
+						'<\?',
+					],
+				],
+			],
+			[
 				'name'          => 'code',
 				'label'         => __( 'Page Code', 'pods' ),
 				'type'          => 'code',
@@ -214,10 +241,33 @@ class Pods_Pages extends PodsComponent {
 				],
 			],
 			[
+				'name'         => 'precode_notice',
+				'type'         => 'html',
+				'html_content' => sprintf(
+			'
+						<div class="pods-ui-notice-admin pods-ui-notice-warning">
+							<p>⚠️&nbsp;&nbsp;%1$s</p>
+							<p><a href="%2$s" target="_blank" rel="noopener noreferrer">%3$s</a> | <a href="%4$s" target="_blank" rel="noopener noreferrer">%5$s</a></p>
+						</div>
+					',
+					esc_html__( 'Precode detected, this feature is deprecated', 'pods' ),
+					'https://docs.pods.io/displaying-pods/pod-page-template-hierarchy-for-themes/',
+					esc_html__( 'Read more about file-based templates', 'pods' ),
+					admin_url( 'admin.php?page=pods-components' ),
+					esc_html__( 'Switch to file-based Pod Pages using our Migrate PHP into File-based templates component', 'pods' )
+				),
+				'excludes-on'  => [
+					'precode' => '',
+				],
+			],
+			[
 				'name'  => 'precode',
 				'label' => __( 'Page Precode', 'pods' ),
 				'type'  => 'code',
 				'help'  => __( 'Precode will run before your theme outputs the page. It is expected that this value will be a block of PHP. You must open the PHP tag here, as we do not open it for you by default.', 'pods' ),
+				'excludes-on'  => [
+					'precode' => '',
+				],
 			],
 			[
 				'name'                  => 'page_template',
@@ -226,7 +276,7 @@ class Pods_Pages extends PodsComponent {
 				'type'                  => 'pick',
 				'pick_object'           => 'custom-simple',
 				'pick_format_type'      => 'single',
-				'pick_format_single' => 'dropdown',
+				'pick_format_single'    => 'dropdown',
 				'data'                  => $page_templates,
 				'override_object_field' => true,
 			],
@@ -632,7 +682,7 @@ class Pods_Pages extends PodsComponent {
 	 * @param $text
 	 * @param $post
 	 *
-	 * @return string|void
+	 * @return string
 	 */
 	public function set_title_text( $text, $post ) {
 		return __( 'Enter URL here', 'pods' );
@@ -653,6 +703,57 @@ class Pods_Pages extends PodsComponent {
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_assets' ), 21 );
 		add_filter( 'enter_title_here', array( $this, 'set_title_text' ), 10, 2 );
+
+		$page_code = get_the_content();
+		$pre_code = get_post_meta( get_the_ID(), 'precode', true );
+
+		$has_php = false !== strpos( $page_code, '<?' );
+		$has_precode = ! empty( $pre_code );
+
+		if ( $has_php && pods_eval_show_errors() ) {
+			pods_deprecated( 'Pod Page PHP code has been deprecated, please use WP Page Templates or hook into the pods_content filter instead of embedding PHP.', '2.1' );
+
+			pods_message(
+				sprintf(
+					'
+						<p><strong>%1$s:</strong> %2$s</p>
+						<p><a href="%3$s" target="_blank" rel="noopener noreferrer">%4$s</a> | <a href="%5$s" target="_blank" rel="noopener noreferrer">%6$s</a></p>
+					',
+					esc_html__( 'Pod Page Error', 'pods' ),
+					esc_html__( 'This Pod Page contains PHP code that will not run due to security restrictions in Pods.', 'pods' ),
+					'https://docs.pods.io/displaying-pods/pod-page-template-hierarchy-for-themes/',
+					esc_html__( 'Read more about file-based templates', 'pods' ),
+					admin_url( 'admin.php?page=pods-components' ),
+					esc_html__( 'Switch to file-based Pod Pages using our Migrate PHP into File-based templates component', 'pods' )
+				),
+				'error',
+				false,
+				false
+			);
+		}
+
+		if ( $has_precode && pods_eval_show_errors() ) {
+			pods_deprecated( 'Pod Page precode has been deprecated, please use WP Page Templates or hook into the pods_content filter instead of embedding PHP.', '2.1' );
+
+			pods_message(
+				sprintf(
+					'
+						<p><strong>%1$s:</strong> %2$s</p>
+						<p><a href="%3$s" target="_blank" rel="noopener noreferrer">%4$s</a> | <a href="%5$s" target="_blank" rel="noopener noreferrer">%6$s</a></p>
+					',
+					__( 'Pod Page Error', 'pods' ),
+					__( 'This Pod Page contains precode (deprecated) that will not run due to security restrictions in Pods.', 'pods' ),
+					'https://docs.pods.io/displaying-pods/pod-page-template-hierarchy-for-themes/',
+					esc_html__( 'Read more about file-based templates', 'pods' ),
+					admin_url( 'admin.php?page=pods-components' ),
+					esc_html__( 'Switch to file-based Pod Pages using our Migrate PHP into File-based templates component', 'pods' )
+				),
+				'error',
+				false,
+				false
+			);
+		}
+
 	}
 
 	/**
@@ -745,10 +846,21 @@ class Pods_Pages extends PodsComponent {
 
 		// objects will be automatically sanitized
 		if ( $revisions ) {
-			add_action( 'pre_post_update', 'wp_save_post_revision' );
+			add_action( 'pre_post_update', [ $this, 'save_post_revision_for_post' ] );
 		}
 
 		return true;
+	}
+
+	/**
+	 * Save post revision for a post without a return.
+	 *
+	 * @since 3.2.8
+	 *
+	 * @param int $post_id The post ID.
+	 */
+	public function save_post_revision_for_post( $post_id ) {
+		wp_save_post_revision( $post_id );
 	}
 
 	/**
@@ -940,6 +1052,43 @@ class Pods_Pages extends PodsComponent {
 	}
 
 	/**
+	 * Convert a Page object to a Pod Page data array.
+	 *
+	 * @since 3.2.8
+	 *
+	 * @param Page $object The Pod Page object.
+	 *
+	 * @return array The Pod Page data array.
+	 */
+	public static function object_to_page( Page $object ): array {
+		$id = $object->get_id();
+
+		return [
+			'id'            => $id,
+			'name'          => $object->get_name(),
+			'uri'           => $object->get_label(),
+			'code'          => $object->get_description(),
+			'phpcode'       => $object->get_description(),
+			// phpcode is deprecated
+			'precode'       => get_post_meta( $id, 'precode', true ),
+			'page_template' => get_post_meta( $id, 'page_template', true ),
+			'title'         => get_post_meta( $id, 'page_title', true ),
+			'options'       => [
+				'admin_only'              => (boolean) get_post_meta( $id, 'admin_only', true ),
+				'restrict_role'           => (boolean) get_post_meta( $id, 'restrict_role', true ),
+				'restrict_capability'     => (boolean) get_post_meta( $id, 'restrict_capability', true ),
+				'roles_allowed'           => get_post_meta( $id, 'roles_allowed', true ),
+				'capability_allowed'      => get_post_meta( $id, 'capability_allowed', true ),
+				'restrict_redirect'       => (boolean) get_post_meta( $id, 'restrict_redirect', true ),
+				'restrict_redirect_login' => (boolean) get_post_meta( $id, 'restrict_redirect_login', true ),
+				'restrict_redirect_url'   => get_post_meta( $id, 'restrict_redirect_url', true ),
+				'pod'                     => get_post_meta( $id, 'pod', true ),
+				'pod_slug'                => get_post_meta( $id, 'pod_slug', true ),
+			],
+		];
+	}
+
+	/**
 	 * Check if a Pod Page exists
 	 */
 	public function page_check() {
@@ -976,12 +1125,21 @@ class Pods_Pages extends PodsComponent {
 					add_action( 'wp', array( $this, 'silence_404' ), 1 );
 
 					// Genesis theme integration.
-					add_action( 'genesis_loop', 'pods_content', 11 );
+					add_action( 'genesis_loop', [ $this, 'pods_page_content' ], 11 );
 				}
 			}
 
 			self::$checked = true;
 		}//end if
+	}
+
+	/**
+	 * Output Pdos Page content without return.
+	 *
+	 * @since 3.2.8
+	 */
+	public function pods_page_content() {
+		pods_content();
 	}
 
 	/**
@@ -991,7 +1149,7 @@ class Pods_Pages extends PodsComponent {
 	 *
 	 * @param bool $pods_page
 	 *
-	 * @return string
+	 * @return string|false
 	 */
 	public static function content( $return = false, $pods_page = false ) {
 
@@ -1026,11 +1184,42 @@ class Pods_Pages extends PodsComponent {
 
 			do_action( 'pods_content_pre', $pods_page, $content );
 
-			if ( 0 < strlen( $content ) ) {
-				if ( false !== strpos( $content, '<?' ) && ( ! defined( 'PODS_DISABLE_EVAL' ) || ! PODS_DISABLE_EVAL ) ) {
-					pods_deprecated( 'Pod Page PHP code has been deprecated, please use WP Page Templates or hook into the pods_content filter instead of embedding PHP.', '2.1' );
+			$default_templates   = self::get_templates_for_pod_page_content( $pods_page );
+			$template_files_info = self::get_template_files_info( $default_templates );
 
-					eval( "?>$content" );
+			$template_file = array_key_first( $template_files_info );
+
+			if ( $template_file ) {
+				// Check if we are running this content function from within a Pod Page PHP template already to prevent recursion.
+				if ( did_action( 'pods_page_loaded_template' ) ) {
+					$content = '';
+				} else {
+					$content = pods_template_part( $template_file, compact( 'pods', 'pods_page' ), true );;
+
+					if ( $template_files_info[ $template_file ]['MagicTags'] ) {
+						if ( is_object( $pods ) && ! empty( $pods->id ) ) {
+							$content = $pods->do_magic_tags( $content );
+						} else {
+							_doing_it_wrong( 'Pods Pages', 'Pod Page template supports magic tags but cannot be processed because an associated Pod is not set in the Pod Page settings', '3.2.8' );
+
+							$content = '';
+						}
+					}
+				}
+
+				echo $content;
+			} elseif ( $content && 0 < strlen( $content ) ) {
+				if ( false !== strpos( $content, '<?' ) ) {
+					/**
+					 * Allow evaluating Pod Pages content by custom code snippet if needed.
+					 *
+					 * @since 3.3.0
+					 *
+					 * @param array  $pods_page The Pod Page data.
+					 * @param Pods   $pods      The Pods instance.
+					 * @param string $content   The content of the Pod Page.
+					 */
+					do_action( 'pods_pages_eval_content', $pods_page, $pods, $content );
 				} elseif ( is_object( $pods ) && ! empty( $pods->id ) ) {
 					echo $pods->do_magic_tags( $content );
 				} else {
@@ -1054,6 +1243,8 @@ class Pods_Pages extends PodsComponent {
 		}
 
 		echo $content;
+
+		return '';
 	}
 
 	/**
@@ -1078,8 +1269,8 @@ class Pods_Pages extends PodsComponent {
 			if ( $permission ) {
 				$content = false;
 
-				if ( ! is_object( $pods ) && 404 != $pods && 0 < strlen( (string) pods_var( 'pod', self::$exists['options'] ) ) ) {
-					$slug = pods_var_raw( 'pod_slug', self::$exists['options'], null, null, true );
+				if ( ! is_object( $pods ) && 404 != $pods && 0 < strlen( (string) pods_v( 'pod', self::$exists['options'] ) ) ) {
+					$slug = pods_v( 'pod_slug', self::$exists['options'], null, null, true );
 
 					$has_slug = 0 < strlen( $slug );
 
@@ -1088,7 +1279,7 @@ class Pods_Pages extends PodsComponent {
 						$slug = pods_evaluate_tags( $slug, true );
 					}
 
-					$pods = pods_get_instance( pods_var( 'pod', self::$exists['options'] ), $slug );
+					$pods = pods_get_instance( pods_v_sanitized( 'pod', self::$exists['options'] ), $slug );
 
 					// Auto 404 handling if item doesn't exist
 					if ( $has_slug && ( empty( $slug ) || ! $pods->exists() ) && apply_filters( 'pods_pages_auto_404', true, $slug, $pods, self::$exists ) ) {
@@ -1097,13 +1288,7 @@ class Pods_Pages extends PodsComponent {
 				}
 
 				if ( 0 < strlen( trim( self::$exists['precode'] ) ) ) {
-					$content = self::$exists['precode'];
-				}
-
-				if ( false !== $content && ( ! defined( 'PODS_DISABLE_EVAL' ) || ! PODS_DISABLE_EVAL ) ) {
-					pods_deprecated( 'Pod Page Precode has been deprecated, please use WP Page Templates or hook into the pods_content filter instead of embedding PHP.', '2.1' );
-
-					eval( "?>$content" );
+					$content = trim( self::$exists['precode'] );
 				}
 
 				do_action( 'pods_page_precode', self::$exists, $pods, $content );
@@ -1194,7 +1379,7 @@ class Pods_Pages extends PodsComponent {
 			}
 
 			$title = ( 'right' === $seplocation ) ? "{$page_title} {$sep} " : " {$sep} {$page_title}";
-		} elseif ( strlen( trim( $title ) ) < 1 ) {
+		} elseif ( strlen( trim( (string) $title ) ) < 1 ) {
 			$uri = explode( '?', $_SERVER['REQUEST_URI'] );
 			$uri = preg_replace( '@^([/]?)(.*?)([/]?)$@', '$2', $uri[0] );
 			$uri = preg_replace( '@(-|_)@', ' ', $uri );
@@ -1320,29 +1505,22 @@ class Pods_Pages extends PodsComponent {
 				if ( $template !== $located_template ) {
 					$template = $located_template;
 				} else {
-					$default_templates = array();
-
-					$uri = explode( '?', self::$exists['uri'] );
-					$uri = explode( '#', $uri[0] );
-
-					$page_path = explode( '/', $uri[0] );
-
-					while ( $last = array_pop( $page_path ) ) {
-						$file_name = str_replace( '*', '-w-', implode( '/', $page_path ) . '/' . $last );
-						$sanitized = sanitize_title( $file_name );
-
-						$default_templates[] = 'pods/' . trim( str_replace( '--', '-', $sanitized ), ' -' ) . '.php';
-						$default_templates[] = 'pods-' . trim( str_replace( '--', '-', $sanitized ), ' -' ) . '.php';
-					}
-
-					$default_templates[] = 'pods.php';
-
-					$default_templates = apply_filters( 'pods_page_default_templates', $default_templates );
+					$default_templates = self::get_templates_for_pod_page( self::$exists );
 
 					$template = locate_template( $default_templates );
 
 					if ( '' !== $template ) {
-						// found the template and included it, we're good to go!
+						/**
+						 * Allow determining whether a Pod Page template was loaded.
+						 *
+						 * @since 3.2.8
+						 *
+						 * @param string $template The template file that was loaded.
+						 * @param array  $pod_page The Pods Page data.
+						 */
+						do_action( 'pods_page_loaded_template', $template, self::$exists );
+
+						pods_template_part( $template, compact( 'pods' ) );
 					} else {
 						$template = false;
 
@@ -1461,29 +1639,22 @@ class Pods_Pages extends PodsComponent {
 				if ( $template !== $located_template ) {
 					$template = $located_template;
 				} else {
-					$default_templates = array();
+					$default_templates = self::get_templates_for_pod_page( self::$exists );
 
-					$uri = explode( '?', self::$exists['uri'] );
-					$uri = explode( '#', $uri[0] );
-
-					$page_path = explode( '/', $uri[0] );
-
-					while ( $last = array_pop( $page_path ) ) {
-						$file_name = str_replace( '*', '-w-', implode( '/', $page_path ) . '/' . $last );
-						$sanitized = sanitize_title( $file_name );
-
-						$default_templates[] = 'pods/' . trim( str_replace( '--', '-', $sanitized ), ' -' ) . '.php';
-						$default_templates[] = 'pods-' . trim( str_replace( '--', '-', $sanitized ), ' -' ) . '.php';
-					}
-
-					$default_templates[] = 'pods.php';
-
-					$default_templates = apply_filters( 'pods_page_default_templates', $default_templates );
-
-					$template = locate_template( $default_templates, true );
+					$template = locate_template( $default_templates );
 
 					if ( '' !== $template ) {
-						// found the template and included it, we're good to go!
+						/**
+						 * Allow determining whether a Pod Page template was loaded.
+						 *
+						 * @since 3.2.8
+						 *
+						 * @param string $template The template file that was loaded.
+						 * @param array  $pod_page The Pods Page data.
+						 */
+						do_action( 'pods_page_loaded_template', $template, self::$exists );
+
+						pods_template_part( $template, compact( 'pods' ) );
 					} else {
 						$template = false;
 
@@ -1502,6 +1673,129 @@ class Pods_Pages extends PodsComponent {
 
 			exit;
 		}//end if
+	}
+
+	/**
+	 * Get templates for pod page.
+	 *
+	 * @since 3.2.8
+	 *
+	 * @param array|Page $pod_page The pod page data.
+	 *
+	 * @return array The list of templates for the pod page.
+	 */
+	public static function get_templates_for_pod_page( $pod_page ): array {
+		if ( $pod_page instanceof Page ) {
+			$pod_page = self::object_to_page( $pod_page );
+		}
+
+		$default_templates = [];
+
+		if ( ! empty( $pod_page ) ) {
+			$uri = explode( '?', $pod_page['uri'] );
+			$uri = explode( '#', $uri[0] );
+			$uri = $uri[0];
+
+			$page_path = explode( '/', $uri );
+
+			while ( $last = array_pop( $page_path ) ) {
+				$file_name = str_replace( '*', '-w-', implode( '/', $page_path ) . '/' . $last );
+				$file_name = sanitize_title( $file_name );
+				$file_name = trim( str_replace( '--', '-', $file_name ), ' -' );
+
+				$default_templates[] = 'pods/pages/' . $file_name . '.php';
+				$default_templates[] = 'pods/' . $file_name . '.php';
+				$default_templates[] = 'pods-' . $file_name . '.php';
+			}
+		}
+
+		$default_templates[] = 'pods.php';
+
+		/**
+		 * Allow filtering the list of default templates.
+		 *
+		 * @since unknown
+		 *
+		 * @param array $default_templates The list of default templates.
+		 * @param array $pod_page          The current Pod Page data.
+		 */
+		return (array) apply_filters( 'pods_page_default_templates', $default_templates, $pod_page );
+	}
+
+	/**
+	 * Get templates for pod page content.
+	 *
+	 * @since 3.2.8
+	 *
+	 * @param array|Page $pod_page The pod page data.
+	 *
+	 * @return array The list of templates for the pod page content.
+	 */
+	public static function get_templates_for_pod_page_content( $pod_page ): array {
+		if ( $pod_page instanceof Page ) {
+			$pod_page = self::object_to_page( $pod_page );
+		}
+
+		$default_templates = [];
+
+		if ( ! empty( $pod_page ) ) {
+			$uri = explode( '?', $pod_page['uri'] );
+			$uri = explode( '#', $uri[0] );
+			$uri = $uri[0];
+
+			$page_path = explode( '/', $uri );
+
+			while ( $last = array_pop( $page_path ) ) {
+				$file_name = str_replace( '*', '-w-', implode( '/', $page_path ) . '/' . $last );
+				$file_name = sanitize_title( $file_name );
+				$file_name = trim( str_replace( '--', '-', $file_name ), ' -' );
+
+				$default_templates[] = 'pods/pages/content/' . $file_name . '.php';
+			}
+		}
+
+		/**
+		 * Allow filtering the list of default templates for Pod Page content.
+		 *
+		 * @since unknown
+		 *
+		 * @param array $default_templates The list of default templates for Pod Page content.
+		 * @param array $pod_page          The current Pod Page data.
+		 */
+		return (array) apply_filters( 'pods_page_content_default_templates', $default_templates, $pod_page );
+	}
+
+	/**
+	 * Get the list of template header information for each of the template files.
+	 *
+	 * @since 3.2.8
+	 *
+	 * @param array<int,string> $template_files The list of template files.
+	 *
+	 * @return array The list of template header information for each of the template files.
+	 */
+	public static function get_template_files_info( array $template_files ): array {
+		$template_files_info = [];
+
+		foreach ( $template_files as $template_file ) {
+			$file_path = locate_template( $template_file );
+
+			// Skip if template was not found.
+			if ( '' === $file_path ) {
+				continue;
+			}
+
+			$data = get_file_data( $file_path, [
+				'URI'  => 'Pod Page URI',
+				'MagicTags' => 'Magic Tags',
+			] );
+
+			$data['MagicTags'] = pods_is_truthy( $data['MagicTags'] );
+
+			$template_files_info[ $template_file ] = $data;
+		}
+
+		return $template_files_info;
 	}
 }
 

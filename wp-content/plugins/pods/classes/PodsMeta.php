@@ -630,7 +630,7 @@ class PodsMeta {
 	 * @param string|array $pod      The pod or type of element to attach the group to.
 	 * @param string       $label    Title of the edit screen section, visible to user.
 	 * @param string|array $fields   Either a comma separated list of text fields or an associative array containing
-	 *                               field infomration.
+	 *                               field information.
 	 * @param string       $context  (optional) The part of the page where the edit screen section should be shown
 	 *                               ('normal', 'advanced', or 'side').
 	 * @param string       $priority (optional) The priority within the context where the boxes should show ('high',
@@ -891,8 +891,8 @@ class PodsMeta {
 	 *
 	 * @return array List of groups and their fields.
 	 */
-	public function groups_get( $type, $name, $default_fields = null, $full_objects = false ) {
-		$cache_key = $type . '/' . $name;
+	public function groups_get( $type, $name, $default_fields = null, $full_objects = false, $id = null ) {
+		$cache_key = $type . '/' . $name . '/' . $id;
 
 		if ( $full_objects ) {
 			$cache_key .= '/full';
@@ -911,7 +911,7 @@ class PodsMeta {
 			$type = 'taxonomy';
 		}
 
-		do_action( 'pods_meta_groups', $type, $name );
+		do_action( 'pods_meta_groups', $type, $name, $id );
 
 		$pod    = [];
 		$fields = [];
@@ -978,13 +978,14 @@ class PodsMeta {
 		 *
 		 * @since unknown
 		 *
-		 * @param string  $title  The title to use, default is 'More Fields'.
-		 * @param obj|Pod $pod    Current Pods Object.
-		 * @param array   $fields Array of fields that will go in the metabox.
-		 * @param string  $type   The type of Pod.
-		 * @param string  $name   Name of the Pod.
+		 * @param string          $title  The title to use, default is 'More Fields'.
+		 * @param obj|Pod         $pod    Current Pods Object.
+		 * @param array           $fields Array of fields that will go in the metabox.
+		 * @param string          $type   The type of Pod.
+		 * @param string          $name   Name of the Pod.
+		 * @param int|string|null $id     The item ID.
 		 */
-		$title = apply_filters( 'pods_meta_default_box_title', __( 'More Fields', 'pods' ), $pod, $fields, $type, $name );
+		$title = apply_filters( 'pods_meta_default_box_title', __( 'More Fields', 'pods' ), $pod, $fields, $type, $name, $id );
 
 		$groups = [];
 
@@ -1052,12 +1053,12 @@ class PodsMeta {
 		 *
 		 * @since 2.6.6
 		 *
-		 * @param string $type   The type of Pod
-		 * @param string $name   Name of the Pod
-		 *
-		 * @param array  $groups Array of groups
+		 * @param array           $groups Array of groups
+		 * @param string          $type   The type of Pod
+		 * @param string          $name   Name of the Pod
+		 * @param int|string|null $id     The item ID
 		 */
-		$groups = apply_filters( 'pods_meta_groups_get', $groups, $type, $name );
+		$groups = apply_filters( 'pods_meta_groups_get', $groups, $type, $name, $id );
 
 		pods_static_cache_set( $cache_key, $groups, __CLASS__ . '/groups_get' );
 
@@ -1118,11 +1119,14 @@ class PodsMeta {
 			return;
 		}
 
+		$post_id = null;
+
 		if ( is_object( $post ) ) {
 			$post_type = $post->post_type;
+			$post_id = $post->ID;
 		}
 
-		$groups           = $this->groups_get( 'post_type', $post_type );
+		$groups           = $this->groups_get( 'post_type', $post_type, null, false, $post_id );
 		$pods_field_found = false;
 
 		foreach ( $groups as $group ) {
@@ -1167,6 +1171,32 @@ class PodsMeta {
 		if ( $pods_field_found ) {
 			// Only add the classes to forms that actually have pods fields
 			add_action( 'post_edit_form_tag', array( $this, 'add_class_submittable' ) );
+
+			$pod = pods( $post_type, null, true );
+
+			if ( $pod ) {
+				// Check if we need to disable any specific taxonomies.
+				$taxonomy_sync_fields = $pod->pod_data->get_fields( [
+					'type' => 'pick',
+					'args' => [
+						'pick_object'                         => 'taxonomy',
+						'pick_sync_taxonomy'                  => 1,
+						'pick_sync_taxonomy_hide_taxonomy_ui' => 1,
+					],
+				] );
+
+				foreach ( $taxonomy_sync_fields as $taxonomy_sync_field ) {
+					$taxonomy_name = $taxonomy_sync_field->get_related_object_name();
+
+					if ( $taxonomy_name ) {
+						if ( is_taxonomy_hierarchical( $taxonomy_name ) ) {
+							remove_meta_box( "{$taxonomy_name}div", $post_type, 'side' );
+						} else {
+							remove_meta_box( "tagsdiv-{$taxonomy_name}", $post_type, 'side' );
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1463,7 +1493,7 @@ class PodsMeta {
 			return;
 		}
 
-		$groups = $this->groups_get( 'post_type', $post->post_type );
+		$groups = $this->groups_get( 'post_type', $post->post_type, null, false, $post_id );
 
 		$id   = $post_id;
 		$pod  = $this->maybe_set_up_pod( $post->post_type, $id, 'post_type' );
@@ -1587,7 +1617,13 @@ class PodsMeta {
 	 */
 	public function meta_media( $form_fields, $post ) {
 
-		$groups = $this->groups_get( 'media', 'media' );
+		$post_id = null;
+
+		if ( is_object( $post ) ) {
+			$post_id = $post->ID;
+		}
+
+		$groups = $this->groups_get( 'media', 'media', null, false, $post_id );
 
 		if ( empty( $groups ) || 'attachment' === pods_v( 'typenow', 'global' ) ) {
 			return $form_fields;
@@ -1687,12 +1723,6 @@ class PodsMeta {
 	 */
 	public function save_media( $post, $attachment ) {
 
-		$groups = $this->groups_get( 'media', 'media' );
-
-		if ( empty( $groups ) ) {
-			return $post;
-		}
-
 		$post_id = $attachment;
 
 		if ( empty( $_POST ) || ! wp_verify_nonce( pods_v( 'pods_meta', 'post' ), 'pods_meta_media' ) ) {
@@ -1704,6 +1734,12 @@ class PodsMeta {
 		}
 
 		if ( is_array( $post_id ) || empty( $post_id ) ) {
+			return $post;
+		}
+
+		$groups = $this->groups_get( 'media', 'media', null, false, $post_id );
+
+		if ( empty( $groups ) ) {
 			return $post;
 		}
 
@@ -1839,13 +1875,13 @@ class PodsMeta {
 			$taxonomy_name = $tag;
 		}
 
-		$groups = $this->groups_get( 'taxonomy', $taxonomy_name );
-
 		$id = null;
 
 		if ( is_object( $tag ) ) {
 			$id = $tag->term_id;
 		}
+
+		$groups = $this->groups_get( 'taxonomy', $taxonomy_name, null, false, $id );
 
 		$pod = null;
 
@@ -1938,7 +1974,7 @@ class PodsMeta {
 			return $term_id;
 		}
 
-		$groups = $this->groups_get( 'taxonomy', $taxonomy );
+		$groups = $this->groups_get( 'taxonomy', $taxonomy, null, false, $term_id );
 
 		if ( empty( $groups ) ) {
 			return $term_id;
@@ -2087,14 +2123,20 @@ class PodsMeta {
 
 		do_action( 'pods_meta_meta_user', $user_id );
 
-		$groups = $this->groups_get( 'user', 'user' );
-
 		if ( is_object( $user_id ) ) {
 			$user    = $user_id;
 			$user_id = $user_id->ID;
 		} else {
 			$user = get_userdata( $user_id );
+
+			if ( ! $user ) {
+				return;
+			}
+
+			$user_id = $user->ID;
 		}
+
+		$groups = $this->groups_get( 'user', 'user', null, false, $user_id );
 
 		$id  = $user_id;
 		$pod = null;
@@ -2221,7 +2263,7 @@ class PodsMeta {
 			$user_id = $user_id->ID;
 		}
 
-		$groups = $this->groups_get( 'user', 'user' );
+		$groups = $this->groups_get( 'user', 'user', null, false, $user_id );
 
 		$id   = $user_id;
 		$pod  = $this->maybe_set_up_pod( 'user', $id, 'user' );
@@ -2319,7 +2361,7 @@ class PodsMeta {
 		if ( ! $no_conflict ) {
 			$user = get_user_by( 'login', $user_login );
 
-			if ( $user && ! is_wp_error( $user ) ) {
+			if ( $user instanceof WP_User ) {
 				$pod = 'user';
 				$id  = $user->ID;
 
@@ -2650,13 +2692,15 @@ class PodsMeta {
 	 */
 	public function save_comment( $comment_id ) {
 
-		$groups = $this->groups_get( 'comment', 'comment' );
-
-		if ( empty( $groups ) ) {
-			return $comment_id;
-		} elseif ( empty( $_POST ) ) {
+		if ( empty( $_POST ) ) {
 			return $comment_id;
 		} elseif ( ! wp_verify_nonce( pods_v( 'pods_meta', 'post' ), 'pods_meta_comment' ) ) {
+			return $comment_id;
+		}
+
+		$groups = $this->groups_get( 'comment', 'comment', null, false, $comment_id );
+
+		if ( empty( $groups ) ) {
 			return $comment_id;
 		}
 
@@ -2924,6 +2968,16 @@ class PodsMeta {
 				'wp_navigation'        => true,
 				'wp_template'          => true,
 				'wp_template_part'     => true,
+				'wp_font_face'         => true,
+				'wp_font_family'       => true,
+				// Disable ACF post types.
+				'acf-taxonomy'         => true,
+				'acf-post-type'        => true,
+				'acf-field-group'      => true,
+				'acf-field'            => true,
+				// Disable Advanced views.
+				'acf_views'            => true,
+				'acf_cards'            => true,
 				// Disable Beaver Builder post types.
 				'fl-theme-layout'      => true,
 				'fl-builder-template'  => true,
@@ -2948,6 +3002,7 @@ class PodsMeta {
 				'post_format'                  => true,
 				'wp_theme'                     => true,
 				'wp_template_part_area'        => true,
+				'wp_pattern_category'          => true,
 				// Disable Beaver Builder taxonomies.
 				'fl-builder-template-category' => true,
 				'fl-builder-template-type'     => true,
@@ -4298,10 +4353,6 @@ class PodsMeta {
 			}
 
 			$pod->data->row[ $meta_key ] = $meta_value;
-
-			if ( isset( $meta_cache[ '_pods_' . $key ] ) && $field_object && in_array( $field_object['type'], $tableless_field_types, true ) ) {
-				unset( $meta_cache[ '_pods_' . $key ] );
-			}
 		}
 
 		$pod->save( $meta_key, $meta_value, $object_id, array(
@@ -4568,30 +4619,23 @@ class PodsMeta {
 
 	/**
 	 * @param $id
-	 *
-	 * @return bool
 	 */
 	public function delete_user( $id ) {
-		return $this->delete_object( 'user', $id );
+		$this->delete_object( 'user', $id );
 	}
 
 	/**
 	 * @param $id
-	 *
-	 * @return bool
 	 */
 	public function delete_comment( $id ) {
-		return $this->delete_object( 'comment', $id );
+		$this->delete_object( 'comment', $id );
 	}
 
 	/**
 	 * @param $id
-	 *
-	 * @return bool
 	 */
 	public function delete_media( $id ) {
-
-		return $this->delete_object( 'media', $id );
+		$this->delete_object( 'media', $id );
 	}
 
 	/**

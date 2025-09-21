@@ -1,9 +1,8 @@
 <?php
 
-use Pods\Data\Conditional_Logic;
 use Pods\Whatsit\Field;
 use Pods\Whatsit\Pod;
-use Pods\Whatsit\Value_Field;
+use Pods\API\Whatsit\Value_Field;
 use Pod as Pod_Deprecated;
 
 /**
@@ -479,10 +478,10 @@ class PodsField {
 		// Build DFV field data.
 		$data = [
 			'htmlAttr'      => [
-				'id'         => $attributes['id'],
-				'class'      => $attributes['class'],
-				'name'       => $attributes['name'],
-				'name_clean' => $attributes['data-name-clean'],
+				'id'         => pods_enforce_safe_id( $attributes['id'] ),
+				'class'      => pods_enforce_safe_class( $attributes['class'] ),
+				'name'       => pods_enforce_safe_id( $attributes['name'] ),
+				'name_clean' => pods_enforce_safe_id( $attributes['data-name-clean'] ),
 			],
 			'fieldType'     => $args->type,
 			'fieldItemData' => $this->build_dfv_field_item_data( $args ),
@@ -898,7 +897,7 @@ class PodsField {
 	 * @param string|array $value   Field value.
 	 * @param array|null   $options Field options.
 	 *
-	 * @return string
+	 * @return string|array The field value with HTML stripped (if the field supports it).
 	 */
 	public function strip_html( $value, $options = null ) {
 		if ( is_array( $value ) ) {
@@ -1121,10 +1120,10 @@ class PodsField {
 	 *
 	 * @param array $properties Properties to export.
 	 *
-	 * @return void
+	 * @return self
 	 */
 	public static function __set_state( $properties ) {
-
+		return new PodsField();
 	}
 
 }

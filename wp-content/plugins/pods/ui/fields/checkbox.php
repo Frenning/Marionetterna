@@ -4,13 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die( '-1' );
 }
 
-$options['data'] = (array) pods_var_raw( 'data', $options, array(), null, true );
+$options['data'] = (array) pods_v( 'data', $options, [] );
 
 $data_count = count( $options['data'] );
 
 if ( 0 < $data_count ) {
 
-	if ( 1 == pods_var( 'grouped', $options, 0, null, true ) ) {
+	if ( 1 === (int) pods_v( 'grouped', $options ) ) {
 		?>
 		<div class="pods-pick-values pods-pick-checkbox">
 		<ul>
@@ -65,7 +65,7 @@ if ( 0 < $data_count ) {
 			$attributes['class'] .= ' pods-form-ui-no-label';
 		}
 
-		if ( pods_var( 'readonly', $options, false ) ) {
+		if ( (bool) pods_v( 'readonly', $options, false ) ) {
 			$attributes['readonly'] = 'READONLY';
 			$attributes['disabled'] = 'DISABLED';
 
@@ -76,7 +76,7 @@ if ( 0 < $data_count ) {
 			$attributes['id'] = $primary_id . $counter;
 		}
 
-		if ( 1 == pods_var( 'grouped', $options, 0, null, true ) ) {
+		if ( 1 === (int) pods_v( 'grouped', $options ) ) {
 			?>
 			<li>
 			<?php
@@ -87,14 +87,14 @@ if ( 0 < $data_count ) {
 			<?php
 			if ( isset( $attributes['readonly'] ) && isset( $attributes['checked'] ) && 'CHECKED' === $attributes['checked'] ) {
 				?>
-				<input type="hidden" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $attributes['value'] ); ?>" />
+				<input type="hidden" name="<?php echo esc_attr( pods_js_name( $name ) ); ?>" value="<?php echo esc_attr( $attributes['value'] ); ?>" />
 				<?php
 			}
 
 			if ( 0 < strlen( $label ) ) {
-				$help = pods_var_raw( 'help', $options );
+				$help = pods_v( 'help', $options );
 
-				if ( 1 == pods_var( 'grouped', $options, 0, null, true ) || empty( $help ) ) {
+				if ( 1 === (int) pods_v( 'grouped', $options ) || empty( $help ) ) {
 					$help = '';
 				}
 
@@ -104,7 +104,7 @@ if ( 0 < $data_count ) {
 		</div>
 		<?php
 
-		if ( 1 == pods_var( 'grouped', $options, 0, null, true ) ) {
+		if ( 1 === (int) pods_v( 'grouped', $options ) ) {
 			?>
 			</li>
 			<?php
@@ -113,7 +113,7 @@ if ( 0 < $data_count ) {
 		$counter ++;
 	}//end foreach
 
-	if ( 1 == pods_var( 'grouped', $options, 0, null, true ) ) {
+	if ( 1 === (int) pods_v( 'grouped', $options ) ) {
 		?>
 		</ul>
 		</div>

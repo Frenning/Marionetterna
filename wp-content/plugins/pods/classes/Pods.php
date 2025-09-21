@@ -22,7 +22,8 @@ use Pod as Deprecated_Pod;
  * @property null|string $search      Whether search is enabled.
  * @property null|string $search_var  The query variable used for search.
  * @property null|string $search_mode The search mode to use.
- * @property null|string $params      The last find() params.
+ * @property null|string $filter_var  The query variable used for filters.
+ * @property null|array  $params      The last find() params.
  * @property null|string $sql         The last find() SQL query.
  */
 class Pods implements Iterator {
@@ -450,10 +451,9 @@ class Pods implements Iterator {
 		 * @since unknown
 		 *
 		 * @param array|\Pods\Whatsit\Field|mixed $field_data The data to be returned for the field / option.
-		 * @param array|\Pods\Whatsit\Field       $field      The field information.
 		 * @param string|null                     $field_name The specific field that data is being return for, if set when method is called or null.
 		 * @param string|null                     $option     Value of option param when method was called. Can be used to get a list of available items from a relationship field.
-		 * @param Pods|object                     $this       The current Pods class instance.
+		 * @param Pods|object                     $obj        The current Pods class instance.
 		 */
 		return apply_filters( 'pods_pods_fields', $field_data, $field_name, $option, $this );
 
@@ -643,8 +643,8 @@ class Pods implements Iterator {
 			 *
 			 * @param string       $output How to output related fields. Default is 'arrays'. Options: ids|names|objects|arrays|pods|find
 			 * @param array|object $row    Current row being outputted.
-			 * @param array        $params Params array passed to field().
-			 * @param Pods         $this   Current Pods object.
+			 * @param object       $params Params array passed to field().
+			 * @param Pods         $obj    Current Pods object.
 			 */
 			$params->output = apply_filters( 'pods_pods_field_related_output_type', 'arrays', $this->data->row, $params, $this );
 		}
@@ -659,7 +659,7 @@ class Pods implements Iterator {
 
 		// Support old $orderby variable.
 		if ( null !== $params->single && is_string( $params->single ) && empty( $params->orderby ) ) {
-			if ( ! class_exists( 'Deprecated_Pod' ) || Deprecated_Pod::$deprecated_notice ) {
+			if ( pods_is_debug_display() ) {
 				pods_deprecated( 'Pods::field', '2.0', 'Use $params[ \'orderby\' ] instead' );
 			}
 
@@ -844,9 +844,18 @@ class Pods implements Iterator {
 		$is_relationship_field_and_not_simple = (
 			! $is_traversal
 			&& $field_data
-			&& ! $field_data instanceof Object_Field
+			&& (
+				! $field_data instanceof Object_Field
+				|| 'comments' === $field_data->get_name()
+			)
 			&& $is_relationship_field
 			&& ! $is_simple_relationship_field
+		);
+
+		$is_object_expanded_relationship_field = (
+			$is_relationship_field
+			&&  $field_data instanceof Object_Field
+			&& 'comments' === $field_data->get_name()
 		);
 
 		// If a relationship is returned from the table as an ID but the parameter is not traversal, we need to run traversal logic.
@@ -903,7 +912,14 @@ class Pods implements Iterator {
 		} elseif ( empty( $value ) ) {
 			$object_field_found = false;
 
-			if ( 'object_field' === $field_source && ! $is_traversal ) {
+			if (
+				'object_field' === $field_source
+				&& ! $is_traversal
+				&& (
+					! $is_object_expanded_relationship_field
+					|| 'arrays' === $params->output
+				)
+			) {
 				$object_field_found = true;
 
 				if ( isset( $this->data->row[ $first_field ] ) ) {
@@ -948,8 +964,8 @@ class Pods implements Iterator {
 					 * @param array|string|null $value      Value retrieved.
 					 * @param array             $field_data Current field object.
 					 * @param array|object      $row        Current row being outputted.
-					 * @param array             $params     Params array passed to field().
-					 * @param object|Pods       $this       Current Pods object.
+					 * @param object            $params     Params array passed to field().
+					 * @param Pods              $obj        Current Pods object.
 					 */
 					$v = apply_filters( "pods_pods_field_{$field_type}", null, $field_data, $this->row(), $params, $this );
 
@@ -1010,8 +1026,8 @@ class Pods implements Iterator {
 						 *
 						 * @param int    $id            The object ID.
 						 * @param string $metadata_type The object metadata type.
-						 * @param array  $params        Field params
-						 * @param \Pods  $pod           Pods object.
+						 * @param object $params        Field params.
+						 * @param Pods   $obj           Pods object.
 						 */
 						$id = apply_filters( 'pods_pods_field_get_metadata_object_id', $this->id(), $metadata_type, $params, $this );
 
@@ -1157,6 +1173,9 @@ class Pods implements Iterator {
 							$last_pick_val       = $pick_val;
 							$last_options        = $current_field;
 							$last_object_options = $current_field;
+
+							// Don't fetch extra unnecessary data.
+							$ids = array_unique( $ids );
 
 							// Temporary hack until there's some better handling here.
 							$last_limit *= count( $ids );
@@ -1334,10 +1353,18 @@ class Pods implements Iterator {
 
 								$item_data = array();
 
+								// Debug purposes
+								if ( 1 == pods_v( 'pods_debug_params_all', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
+									pods_debug( __METHOD__ . ':' . __LINE__ );
+									pods_debug( $sql );
+								}
+
 								if ( ! $related_obj || ! $related_obj->valid() ) {
 									if ( ! is_object( $this->alt_data ) ) {
 										$this->alt_data = pods_data();
 									}
+
+									pods_debug_log_data( [ 'field_name' => $params->name, 'sql' => $sql ], 'related-field-params', __METHOD__, __LINE__ );
 
 									$item_data = $this->alt_data->select( $sql );
 								} else {
@@ -1348,6 +1375,8 @@ class Pods implements Iterator {
 
 										$sql['orderby'] = 'FIELD( `t`.`' . $table['field_id'] . '`, ' . $order_ids . ' )';
 									}
+
+									pods_debug_log_data( [ 'field_name' => $params->name, 'sql' => $sql ], 'related-field-params', __METHOD__, __LINE__ );
 
 									$related_obj->find( $sql );
 
@@ -1798,8 +1827,8 @@ class Pods implements Iterator {
 		 *
 		 * @param array|string|null $value  Value to be returned.
 		 * @param array|object      $row    Current row being outputted.
-		 * @param array             $params Params array passed to field().
-		 * @param object|Pods       $this   Current Pods object.
+		 * @param object            $params Params array passed to field().
+		 * @param Pods              $obj    Current Pods object.
 		 */
 		$value = apply_filters( 'pods_pods_field', $value, $this->row(), $params, $this );
 
@@ -2376,6 +2405,7 @@ class Pods implements Iterator {
 			'search_across_picks' => false,
 			'search_across_files' => false,
 			// Advanced parameters.
+			'filter_var'          => $this->filter_var,
 			'filters'             => $this->filters,
 			'sql'                 => $sql,
 			// Caching parameters.
@@ -2413,6 +2443,7 @@ class Pods implements Iterator {
 		$this->pagination = (boolean) $params->pagination;
 		$this->search     = (boolean) $params->search;
 		$this->search_var = $params->search_var;
+		$this->filter_var = $params->filter_var;
 		$params->join     = (array) $params->join;
 
 		if ( empty( $params->search_query ) ) {
@@ -2536,8 +2567,8 @@ class Pods implements Iterator {
 		 *
 		 * @since unknown
 		 *
-		 * @param int|string|null $id   Item ID being fetched or null.
-		 * @param object|Pods     $this Current Pods object.
+		 * @param int|string|null $id  Item ID being fetched or null.
+		 * @param Pods            $obj Current Pods object.
 		 */
 		do_action( 'pods_pods_fetch', $id, $this );
 
@@ -2569,8 +2600,8 @@ class Pods implements Iterator {
 		 *
 		 * @since unknown
 		 *
-		 * @param int|string|null The ID of the row being reset to or null if being reset to the beginning.
-		 * @param object|Pods $this Current Pods object.
+		 * @param int|string|null $row The ID of the row being reset to or null if being reset to the beginning.
+		 * @param Pods            $obj Current Pods object.
 		 */
 		do_action( 'pods_pods_reset', $row, $this );
 
@@ -2625,7 +2656,7 @@ class Pods implements Iterator {
 		 *
 		 * @since unknown
 		 *
-		 * @param object|Pods $this Current Pods object.
+		 * @param Pods $obj Current Pods object.
 		 */
 		do_action( 'pods_pods_total_found', $this );
 
@@ -3352,28 +3383,29 @@ class Pods implements Iterator {
 			$append = '&';
 		}
 
-		$defaults = array(
-			'type'        => 'advanced',
-			'label'       => __( 'Go to page:', 'pods' ),
-			'show_label'  => true,
-			'first_text'  => __( '&laquo; First', 'pods' ),
-			'prev_text'   => __( '&lsaquo; Previous', 'pods' ),
-			'next_text'   => __( 'Next &rsaquo;', 'pods' ),
-			'last_text'   => __( 'Last &raquo;', 'pods' ),
-			'prev_next'   => true,
-			'first_last'  => true,
-			'limit'       => (int) $this->limit,
-			'offset'      => (int) $this->offset,
-			'page'        => max( 1, (int) $this->page ),
-			'mid_size'    => 2,
-			'end_size'    => 1,
-			'total_found' => $this->total_found(),
-			'page_var'    => $this->page_var,
-			'base'        => "{$url}{$append}%_%",
-			'format'      => "{$this->page_var}=%#%",
-			'class'       => '',
-			'link_class'  => '',
-		);
+		$defaults = [
+			'type'            => 'advanced',
+			'label'           => __( 'Go to page:', 'pods' ),
+			'show_label'      => true,
+			'first_text'      => __( '&laquo; First', 'pods' ),
+			'prev_text'       => __( '&lsaquo; Previous', 'pods' ),
+			'next_text'       => __( 'Next &rsaquo;', 'pods' ),
+			'last_text'       => __( 'Last &raquo;', 'pods' ),
+			'prev_next'       => true,
+			'first_last'      => true,
+			'limit'           => (int) $this->limit,
+			'offset'          => (int) $this->offset,
+			'page'            => max( 1, (int) $this->page ),
+			'mid_size'        => 2,
+			'end_size'        => 1,
+			'total_found'     => $this->total_found(),
+			'page_var'        => $this->page_var,
+			'base'            => "{$url}{$append}%_%",
+			'format'          => "{$this->page_var}=%#%",
+			'class'           => '',
+			'link_class'      => '',
+			'wrap_pagination' => false,
+		];
 
 		if ( is_object( $params ) ) {
 			$params = get_object_vars( $params );
@@ -3392,6 +3424,8 @@ class Pods implements Iterator {
 		if ( ! in_array( $params->type, array( 'simple', 'advanced', 'paginate', 'list' ), true ) ) {
 			$pagination = 'advanced';
 		}
+
+		$wrap_pagination = (bool) $params->wrap_pagination;
 
 		ob_start();
 
@@ -3511,7 +3545,7 @@ class Pods implements Iterator {
 		$search = trim( $params['search'] );
 
 		if ( '' === $search ) {
-			$search = pods_v_sanitized( $pod->search_var, 'get', '' );
+			$search = sanitize_text_field( pods_v( $pod->search_var, 'get', '' ) );
 		}
 
 		ob_start();
@@ -3525,9 +3559,9 @@ class Pods implements Iterator {
 		 *
 		 * @since unknown
 		 *
-		 * @param string      $output Filter output.
-		 * @param array       $params Params array passed to filters().
-		 * @param object|Pods $this   Current Pods object.
+		 * @param string $output Filter output.
+		 * @param array  $params Params array passed to filters().
+		 * @param Pods   $obj    Current Pods object.
 		 */
 		return apply_filters( 'pods_pods_filters', $output, $params, $this );
 	}
@@ -3693,6 +3727,8 @@ class Pods implements Iterator {
 			if ( ! empty( $code ) ) {
 				// Only detail templates need $this->id.
 				if ( empty( $this->id ) ) {
+					$this->reset();
+
 					while ( $this->fetch() ) {
 						$info['item_id'] = $this->id();
 
@@ -4151,7 +4187,7 @@ class Pods implements Iterator {
 				];
 			}
 
-			$field = pods_config_merge_data( $defaults, $fields );
+			$field = pods_config_merge_data( $defaults, $field );
 
 			$field['name'] = trim( $field['name'] );
 
@@ -4210,6 +4246,17 @@ class Pods implements Iterator {
 		$pre = apply_filters( 'pods_pre_do_magic_tags', null, $code, $this );
 		if ( null !== $pre ) {
 			return $pre;
+		}
+
+		if ( ! is_string( $code ) ) {
+			_doing_it_wrong( __FUNCTION__, 'Pods::do_magic_tags() must be given a string, a non-string was provided.', '3.3.2' );
+			pods_debug_log( 'Pods::do_magic_tags() called with non-string: ' . var_export( $code, true ) );
+
+			return '';
+		}
+
+		if ( '' === trim( $code ) ) {
+			return '';
 		}
 
 		return preg_replace_callback( '/({@(.*?)})/m', array( $this, 'process_magic_tags' ), $code );
@@ -4281,10 +4328,11 @@ class Pods implements Iterator {
 		/**
 		 * Filter the magic tag output for a value.
 		 *
-		 * @param string $value      Magic tag output for value.
-		 * @param string $field_name Magic tag field name.
-		 * @param string $before     Before content.
-		 * @param string $after      After content.
+		 * @param string $value       Magic tag output for value.
+		 * @param string $field_name  Magic tag field name.
+		 * @param string $helper_name The helper name.
+		 * @param string $before      Before content.
+		 * @param string $after       After content.
 		 */
 		$value = apply_filters( 'pods_do_magic_tags', $value, $field_name, $helper_name, $before, $after );
 
@@ -4295,7 +4343,7 @@ class Pods implements Iterator {
 			) );
 		}
 
-		if ( null !== $value && false !== $value ) {
+		if ( $value || is_numeric( $value ) ) {
 			return $before . $value . $after;
 		}
 
@@ -4614,6 +4662,7 @@ class Pods implements Iterator {
 			'page_var',
 			'search',
 			'search_var',
+			'filter_var',
 			'search_mode',
 			'api',
 			'row_number',
@@ -4679,6 +4728,7 @@ class Pods implements Iterator {
 			'page_var'    => 'string',
 			'search'      => 'boolean',
 			'search_var'  => 'string',
+			'filter_var'  => 'string',
 			'search_mode' => 'string',
 			'id'          => 'int',
 		);

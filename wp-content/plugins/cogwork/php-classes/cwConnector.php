@@ -188,7 +188,7 @@ class cwConnector {
 
 		$hostUrl = $this->protocol.'://';
 		switch ($this->host) {
-			case 'test'  : $hostUrl.= 'test.minaaktiviteter.se/'; break;
+			case 'test'  : $hostUrl.= 'stage-2.minaaktiviteter.se/'; break;
 			case 'local' : $hostUrl.= 'localhost/cw/public_html/'; break;
 			case 'dans'  : $hostUrl.= 'dans.se/'; break;
 			case 'idrott'  : $hostUrl.= 'idrott.se/'; break;
@@ -356,7 +356,7 @@ class cwConnector {
 		}
 
 		switch ($this->host) {
-			case 'test'  : $hostUrl.= 'test.minaaktiviteter.se/'; break;
+			case 'test'  : $hostUrl.= 'stage-2.minaaktiviteter.se/'; break;
 			case 'local' : $hostUrl.= 'localhost/cw/public_html/'; break;	
 			default      : $hostUrl.= 'minaaktiviteter.se/'; break;
 		}
@@ -364,7 +364,7 @@ class cwConnector {
 	    $orgCode = $this->orgCode;
 
 		$url = $hostUrl;
-		$url .= 'api/public/json/userLogin/?';
+		$url .= 'api/public/userLogin/?';
 		$url .= '&org=' . urlencode($orgCode);
 		$url .= '&pw='  .  urlencode($apiPasword);
 		$url .= '&username=' . urlencode($username);

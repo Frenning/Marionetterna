@@ -57,6 +57,13 @@ class PodsUI {
 	public $id = 0;
 
 	/**
+	 * The inserted item ID.
+	 *
+	 * @var int
+	 */
+	public $insert_id = 0;
+
+	/**
 	 * The prefix used for all URL parameters used by PodsUI.
 	 *
 	 * @since 2.7.28
@@ -561,7 +568,7 @@ class PodsUI {
 		if ( ( ! is_object( $this->pod ) || 'Pods' != get_class( $this->pod ) ) && false === $this->sql['table'] && false === $this->data ) {
 			echo $this->error( __( '<strong>Error:</strong> Pods UI needs a Pods object or a Table definition to run from, see the User Guide for more information.', 'pods' ) );
 
-			return null;
+			return;
 		}
 
 		// Assign pod labels
@@ -893,7 +900,7 @@ class PodsUI {
 		}
 
 		$unique_identifier .= '_' . $this->page;
-		if ( $this->num && 0 < strlen( $this->num ) ) {
+		if ( $this->num && 0 < strlen( (string) $this->num ) ) {
 			$unique_identifier .= '_' . $this->num_prefix . $this->num;
 		}
 
@@ -2352,11 +2359,13 @@ class PodsUI {
 				'pagination'          => true,
 				'limit'               => (int) $limit,
 				'search'              => $this->searchable,
+				'search_var'          => $this->num_prefix . 'search' . $this->num,
 				'search_query'        => $this->search,
 				'search_across'       => $this->search_across,
 				'search_across_picks' => $this->search_across_picks,
-				'fields'              => $this->fields['search'],
+				'filter_var'          => $this->num_prefix . 'filter' . $this->num,
 				'filters'             => $this->filters,
+				'fields'              => $this->fields['search'],
 				'sql'                 => $sql,
 			);
 
@@ -2371,8 +2380,10 @@ class PodsUI {
 				'page'         => (int) $this->page,
 				'pagination'   => true,
 				'limit'        => (int) $limit,
+				'search_var'   => $this->num_prefix . 'search' . $this->num,
 				'search'       => $this->searchable,
 				'search_query' => $this->search,
+				'filter_var'   => $this->num_prefix . 'filter' . $this->num,
 				'fields'       => $this->fields['search'],
 				'sql'          => $sql,
 			);
@@ -2401,7 +2412,7 @@ class PodsUI {
 		 *
 		 * @param array  $find_params Parameters used with Pods::find()
 		 * @param string $action      Current action
-		 * @param PodsUI $this        PodsUI instance
+		 * @param PodsUI $obj         PodsUI instance
 		 *
 		 * @since 2.6.8
 		 */
@@ -2409,8 +2420,11 @@ class PodsUI {
 
 		// Debug purposes
 		if ( 1 == pods_v( 'pods_debug_params', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
+			pods_debug( __METHOD__ . ':' . __LINE__ );
 			pods_debug( $find_params );
 		}
+
+		pods_debug_log_data( $find_params, 'pods-ui-find-params', __METHOD__, __LINE__ );
 
 		return $find_params;
 	}
@@ -2634,9 +2648,9 @@ class PodsUI {
 		 * @since 2.6.8
 		 *
 		 * @param array  $custom_container_classes List of custom classes to use.
-		 * @param PodsUI $this                     PodsUI instance.
+		 * @param PodsUI $obj                      PodsUI instance.
 		 */
-		$custom_container_classes = apply_filters( 'pods_ui_manage_custom_container_classes', array() );
+		$custom_container_classes = apply_filters( 'pods_ui_manage_custom_container_classes', array(), $this );
 
 		if ( is_admin() ) {
 			array_unshift( $custom_container_classes, 'wrap' );
@@ -2756,18 +2770,18 @@ class PodsUI {
 					}
 
 					if ( in_array( $filter_field['type'], array( 'date', 'datetime', 'time' ) ) ) {
-						if ( '' == pods_v( 'filter_' . $filter . '_start', 'get', '', true ) && '' == pods_v( 'filter_' . $filter . '_end', 'get', '', true ) ) {
+						if ( '' == pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', 'get', '', true ) && '' == pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', 'get', '', true ) ) {
 							unset( $filters[ $k ] );
 							continue;
 						}
-					} elseif ( '' === pods_v( 'filter_' . $filter, 'get', '' ) ) {
+					} elseif ( '' === pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter, 'get', '' ) ) {
 						unset( $filters[ $k ] );
 						continue;
 					}
 
-					$excluded_filters[] = 'filter_' . $filter . '_start';
-					$excluded_filters[] = 'filter_' . $filter . '_end';
-					$excluded_filters[] = 'filter_' . $filter;
+					$excluded_filters[] = $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start';
+					$excluded_filters[] = $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end';
+					$excluded_filters[] = $this->num_prefix . 'filter' . $this->num . '_' . $filter;
 				}//end foreach
 
 				$this->hidden_vars( $excluded_filters );
@@ -2814,8 +2828,8 @@ class PodsUI {
 								<span class="pods-form-ui-filter-container pods-form-ui-filter-container-<?php echo esc_attr( $filter ); ?>">
 								<?php
 								if ( in_array( $filter_field['type'], array( 'date', 'datetime', 'time' ) ) ) {
-									$start = pods_v( 'filter_' . $filter . '_start', 'get', pods_v( 'filter_default', $filter_field, '', true ), true );
-									$end   = pods_v( 'filter_' . $filter . '_end', 'get', pods_v( 'filter_ongoing_default', $filter_field, '', true ), true );
+									$start = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', 'get', pods_v( 'filter_default', $filter_field, '', true ), true );
+									$end   = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', 'get', pods_v( 'filter_ongoing_default', $filter_field, '', true ), true );
 
 									// override default value
 									$filter_field['default_value']                          = '';
@@ -2843,7 +2857,7 @@ class PodsUI {
 												'<span',
 												'</span>',
 											),
-											PodsForm::field( 'filter_' . $filter . '_start', $start, $filter_field['type'], $filter_field )
+											PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', $start, $filter_field['type'], $filter_field )
 										);
 									?>
 
@@ -2861,10 +2875,10 @@ class PodsUI {
 											'<span',
 											'</span>',
 										),
-										PodsForm::field( 'filter_' . $filter . '_end', $end, $filter_field['type'], $filter_field )
+										PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', $end, $filter_field['type'], $filter_field )
 									);
 								} elseif ( 'pick' === $filter_field['type'] ) {
-									$value = pods_v( 'filter_' . $filter );
+									$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter );
 
 									if ( '' === $value ) {
 										$value = pods_v( 'filter_default', $filter_field );}
@@ -2895,10 +2909,10 @@ class PodsUI {
 											'<span',
 											'</span>',
 										),
-										PodsForm::field( 'filter_' . $filter, $value, 'pick', $options )
+										PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter, $value, 'pick', $options )
 									);
 								} elseif ( 'boolean' === $filter_field['type'] ) {
-									$value = pods_v( 'filter_' . $filter, 'get', '' );
+									$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter, 'get', '' );
 
 									if ( '' === $value ) {
 										$value = pods_v( 'filter_default', $filter_field );}
@@ -2935,10 +2949,10 @@ class PodsUI {
 											'<span',
 											'</span>',
 										),
-										PodsForm::field( 'filter_' . $filter, $value, 'pick', $options )
+										PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter, $value, 'pick', $options )
 									);
 								} else {
-									$value = pods_v( 'filter_' . $filter );
+									$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter );
 
 									if ( '' === $value ) {
 										$value = pods_v( 'filter_default', $filter_field );
@@ -2965,7 +2979,7 @@ class PodsUI {
 											'<span',
 											'</span>',
 										),
-										PodsForm::field( 'filter_' . $filter, $value, 'text', $options )
+										PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter, $value, 'text', $options )
 									);
 								}//end if
 								?>
@@ -2986,15 +3000,15 @@ class PodsUI {
 
 							echo PodsForm::submit_button( $this->header['search'], 'button', false, false, array( 'id' => $this->num_prefix . 'search' . $this->num . '-submit' ) );
 
-							if ( 0 < strlen( $this->search ) ) {
+							if ( 0 < strlen( (string) $this->search ) ) {
 								$clear_filters = array(
 									$this->num_prefix . 'search' . $this->num => false,
 								);
 
 								foreach ( $this->filters as $filter ) {
-									$clear_filters[ 'filter_' . $filter . '_start' ] = false;
-									$clear_filters[ 'filter_' . $filter . '_end' ]   = false;
-									$clear_filters[ 'filter_' . $filter ]            = false;
+									$clear_filters[ $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start' ] = false;
+									$clear_filters[ $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end' ]   = false;
+									$clear_filters[ $this->num_prefix . 'filter' . $this->num . '_' . $filter ]            = false;
 								}
 								?>
 								<br class="clear" />
@@ -3159,10 +3173,10 @@ class PodsUI {
 			}
 
 			if ( isset( $filter_field ) && in_array( $filter_field['type'], array( 'date', 'datetime', 'time' ) ) ) {
-				if ( '' == pods_v( 'filter_' . $filter . '_start', 'get', '', true ) && '' == pods_v( 'filter_' . $filter . '_end', 'get', '', true ) ) {
+				if ( '' == pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', 'get', '', true ) && '' == pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', 'get', '', true ) ) {
 					unset( $filters[ $k ] );
 				}
-			} elseif ( '' === pods_v( 'filter_' . $filter, 'get', '' ) ) {
+			} elseif ( '' === pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter, 'get', '' ) ) {
 				unset( $filters[ $k ] );
 			}
 		}
@@ -3226,9 +3240,9 @@ class PodsUI {
 							);
 
 							foreach ( $this->filters as $filter ) {
-								$clear_filters[ 'filter_' . $filter . '_start' ] = false;
-								$clear_filters[ 'filter_' . $filter . '_end' ]   = false;
-								$clear_filters[ 'filter_' . $filter ]            = false;
+								$clear_filters[ $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start' ] = false;
+								$clear_filters[ $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end' ]   = false;
+								$clear_filters[ $this->num_prefix . 'filter' . $this->num . '_' . $filter ]            = false;
 							}
 							?>
 							<a href="
@@ -3290,7 +3304,7 @@ class PodsUI {
 						}
 
 						foreach ( $filters as $filter ) {
-							$value = pods_v( 'filter_' . $filter );
+							$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter );
 
 							// Only support the first item of the array.
 							if ( is_array( $value ) ) {
@@ -3313,15 +3327,15 @@ class PodsUI {
 								continue;
 							}
 
-							$data_filter = 'filter_' . $filter;
+							$data_filter = $this->num_prefix . 'filter' . $this->num . '_' . $filter;
 
 							$start       = '';
 							$end         = '';
 							$value_label = '';
 
 							if ( in_array( $filter_field['type'], array( 'date', 'datetime', 'time' ) ) ) {
-								$start = pods_v( 'filter_' . $filter . '_start', 'get', '', true );
-								$end   = pods_v( 'filter_' . $filter . '_end', 'get', '', true );
+								$start = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', 'get', '', true );
+								$end   = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', 'get', '', true );
 
 								if ( ! empty( $start ) && ! in_array(
 									$start, array(
@@ -3345,7 +3359,7 @@ class PodsUI {
 
 								$value = trim( $start . ' - ' . $end, ' -' );
 
-								$data_filter = 'filter_' . $filter . '_start';
+								$data_filter = $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start';
 							} elseif ( 'pick' === $filter_field['type'] ) {
 								$value_label = trim( (string) PodsForm::field_method( 'pick', 'value_to_label', $filter, $value, $filter_field, $this->pod->pod_data, null ) );
 							} elseif ( 'boolean' === $filter_field['type'] ) {
@@ -3359,7 +3373,7 @@ class PodsUI {
 								}
 							}//end if
 
-							if ( strlen( $value_label ) < 1 ) {
+							if ( strlen( (string) $value_label ) < 1 ) {
 								$value_label = $value;
 							}
 							?>
@@ -3373,8 +3387,8 @@ class PodsUI {
 
 								<?php
 								if ( in_array( $filter_field['type'], array( 'date', 'datetime', 'time' ) ) ) {
-									echo PodsForm::field( 'filter_' . $filter . '_start', $start, 'hidden' );
-									echo PodsForm::field( 'filter_' . $filter . '_end', $end, 'hidden' );
+									echo PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', $start, 'hidden' );
+									echo PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', $end, 'hidden' );
 								} else {
 									echo PodsForm::field( $data_filter, $value, 'hidden' );
 								}
@@ -3441,15 +3455,15 @@ class PodsUI {
 					foreach ( $filters as $filter ) {
 						$excluded_filters[] = 'filters_relation';
 						$excluded_filters[] = 'filters_compare_' . $filter;
-						$excluded_filters[] = 'filter_' . $filter . '_start';
-						$excluded_filters[] = 'filter_' . $filter . '_end';
-						$excluded_filters[] = 'filter_' . $filter;
+						$excluded_filters[] = $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start';
+						$excluded_filters[] = $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end';
+						$excluded_filters[] = $this->num_prefix . 'filter' . $this->num . '_' . $filter;
 					}
 
 					$get = $_GET;
 
 					foreach ( $get as $k => $v ) {
-						if ( in_array( $k, $excluded_filters ) || strlen( $v ) < 1 ) {
+						if ( in_array( $k, $excluded_filters ) || strlen( (string) $v ) < 1 ) {
 							continue;
 						}
 						?>
@@ -3481,8 +3495,8 @@ class PodsUI {
 						<p class="pods-ui-posts-filter-toggled pods-ui-posts-filter-<?php echo esc_attr( $filter . ( $zebra ? ' clear' : '' ) ); ?>">
 							<?php
 							if ( in_array( $filter_field['type'], array( 'date', 'datetime', 'time' ) ) ) {
-								$start = pods_v( 'filter_' . $filter . '_start', 'get', pods_v( 'filter_default', $filter_field, '', true ), true );
-								$end   = pods_v( 'filter_' . $filter . '_end', 'get', pods_v( 'filter_ongoing_default', $filter_field, '', true ), true );
+								$start = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', 'get', pods_v( 'filter_default', $filter_field, '', true ), true );
+								$end   = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', 'get', pods_v( 'filter_ongoing_default', $filter_field, '', true ), true );
 
 								// override default value
 								$filter_field['default_value']                          = '';
@@ -3527,7 +3541,7 @@ class PodsUI {
 										'<span',
 										'</span>',
 									),
-									PodsForm::field( 'filter_' . $filter . '_start', $start, $filter_field['type'], $filter_field, $pod )
+									PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_start', $start, $filter_field['type'], $filter_field, $pod )
 								);
 								?>
 
@@ -3543,13 +3557,13 @@ class PodsUI {
 											'<span',
 											'</span>',
 										),
-										PodsForm::field( 'filter_' . $filter . '_end', $end, $filter_field['type'], $filter_field, $pod )
+										PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter . '_end', $end, $filter_field['type'], $filter_field, $pod )
 									);
 									?>
 							</span>
 								<?php
 							} elseif ( 'pick' === $filter_field['type'] ) {
-								$value = pods_v( 'filter_' . $filter, 'get', '', true );
+								$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter, 'get', '', true );
 
 								if ( '' === $value ) {
 									$value = pods_v( 'filter_default', $filter_field, '', true );
@@ -3586,13 +3600,13 @@ class PodsUI {
 										'<span',
 										'</span>',
 									),
-									PodsForm::field( 'filter_' . $filter, $value, 'pick', $options, $pod )
+									PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter, $value, 'pick', $options, $pod )
 								);
 								?>
 							</span>
 								<?php
 							} elseif ( 'boolean' === $filter_field['type'] ) {
-								$value = pods_v( 'filter_' . $filter, 'get', '', true );
+								$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter, 'get', '', true );
 
 								if ( '' === $value ) {
 									$value = pods_v( 'filter_default', $filter_field, '', true );
@@ -3635,13 +3649,13 @@ class PodsUI {
 										'<span',
 										'</span>',
 									),
-									PodsForm::field( 'filter_' . $filter, $value, 'pick', $options, $pod )
+									PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter, $value, 'pick', $options, $pod )
 								);
 								?>
 							</span>
 								<?php
 							} else {
-								$value = pods_v( 'filter_' . $filter, 'get', '', true );
+								$value = pods_v( $this->num_prefix . 'filter' . $this->num . '_' . $filter, 'get', '', true );
 
 								if ( '' === $value ) {
 									$value = pods_v( 'filter_default', $filter_field, '', true );
@@ -3674,7 +3688,7 @@ class PodsUI {
 										'<span',
 										'</span>',
 									),
-									PodsForm::field( 'filter_' . $filter, $value, 'text', $options, $pod )
+									PodsForm::field( $this->num_prefix . 'filter' . $this->num . '_' . $filter, $value, 'text', $options, $pod )
 								);
 								?>
 							</span>
@@ -3989,7 +4003,7 @@ class PodsUI {
 											$row_values[ $row_value_key ] = '';
 										} elseif ( $field_value && 0 < strlen( trim( (string) $field_value ) ) ) {
 											$row_values[ $row_value_key ] = trim( (string) $field_value );
-										} elseif ( $field_output && 0 < strlen( $field_output ) ) {
+										} elseif ( $field_output && 0 < strlen( (string) $field_output ) ) {
 											$row_values[ $row_value_key ] = $field_output;
 										}
 									}
@@ -4645,10 +4659,10 @@ class PodsUI {
 				}
 			}
 		}//end if
-		$screen_html = $this->do_hook( 'screen_meta_screen_html', $screen_html );
-		$screen_link = $this->do_hook( 'screen_meta_screen_link', $screen_link );
-		$help_html   = $this->do_hook( 'screen_meta_help_html', $help_html );
-		$help_link   = $this->do_hook( 'screen_meta_help_link', $help_link );
+		$screen_html = (string) $this->do_hook( 'screen_meta_screen_html', $screen_html );
+		$screen_link = (string) $this->do_hook( 'screen_meta_screen_link', $screen_link );
+		$help_html   = (string) $this->do_hook( 'screen_meta_help_html', $help_html );
+		$help_link   = (string) $this->do_hook( 'screen_meta_help_link', $help_link );
 		if ( 0 < strlen( $screen_html ) || 0 < strlen( $screen_link ) || 0 < strlen( $help_html ) || 0 < strlen( $help_link ) ) {
 			?>
 			<div id="screen-meta">
@@ -4794,7 +4808,7 @@ class PodsUI {
 			$this->num_prefix . 'orderby' . $this->num,
 			$this->num_prefix . 'orderby_dir' . $this->num,
 			$this->num_prefix . 'search' . $this->num,
-			'filter_*',
+			$this->num_prefix . 'filter' . $this->num .'_*',
 			$this->num_prefix . 'view' . $this->num,
 			$this->num_prefix . 'pg' . $this->num,
 			'page',
@@ -4875,7 +4889,7 @@ class PodsUI {
 				<?php
 				if ( true == $header ) {
 					?>
-					<span class="paging-input"><input class="current-page" title="<?php esc_attr_e( 'Current page', 'pods' ); ?>" type="text" name="<?php echo esc_attr( $this->num_prefix ); ?>pg<?php echo esc_attr( $this->num ); ?>" value="<?php esc_attr_e( absint( $this->page ) ); ?>" size="<?php esc_attr_e( strlen( $total_pages ) ); ?>"> <?php _e( 'of', 'pods' ); ?>
+					<span class="paging-input"><input class="current-page" title="<?php esc_attr_e( 'Current page', 'pods' ); ?>" type="text" name="<?php echo esc_attr( $this->num_prefix ); ?>pg<?php echo esc_attr( $this->num ); ?>" value="<?php esc_attr_e( absint( $this->page ) ); ?>" size="<?php esc_attr_e( strlen( (string) $total_pages ) ); ?>"> <?php _e( 'of', 'pods' ); ?>
 						<span class="total-pages"><?php echo absint( $total_pages ); ?></span></span>
 					<script type="text/javascript">
 						document.addEventListener( 'DOMContentLoaded', function( event ) {
@@ -4939,7 +4953,7 @@ class PodsUI {
 							$this->num_prefix . 'orderby' . $this->num,
 							$this->num_prefix . 'orderby_dir' . $this->num,
 							$this->num_prefix . 'search' . $this->num,
-							'filter_*',
+							$this->num_prefix . 'filter' . $this->num .'_*',
 							'page',
 						), $this->exclusion()
 					)
@@ -4983,7 +4997,7 @@ class PodsUI {
 	public function do_magic_tags( $tag ) {
 
 		if ( is_array( $tag ) ) {
-			if ( ! isset( $tag[2] ) && strlen( trim( $tag[2] ) ) < 1 ) {
+			if ( ! isset( $tag[2] ) && strlen( trim( (string) $tag[2] ) ) < 1 ) {
 				return '';
 			}
 
@@ -4993,7 +5007,7 @@ class PodsUI {
 		$tag = trim( $tag, ' {@}' );
 		$tag = explode( ',', $tag );
 
-		if ( empty( $tag ) || ! isset( $tag[0] ) || strlen( trim( $tag[0] ) ) < 1 ) {
+		if ( empty( $tag ) || ! isset( $tag[0] ) || strlen( trim( (string) $tag[0] ) ) < 1 ) {
 			return null;
 		}
 
@@ -5020,7 +5034,7 @@ class PodsUI {
 			$after = $tag[3];
 		}
 
-		if ( 0 < strlen( $value ) ) {
+		if ( 0 < strlen( (string) $value ) ) {
 			return $before . $value . $after;
 		}
 
@@ -5043,7 +5057,7 @@ class PodsUI {
 		$get = $_GET;
 		if ( is_array( $array ) ) {
 			foreach ( $array as $key => $val ) {
-				if ( 0 < strlen( $val ) ) {
+				if ( 0 < strlen( (string) $val ) ) {
 					$get[ $key ] = $val;
 				} else {
 					unset( $get[ $key ] );

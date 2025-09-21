@@ -136,6 +136,9 @@ class Item_Single_List_Fields extends Item_Single {
 		$attributes = $this->attributes( $attributes );
 		$attributes = array_map( 'pods_trim', $attributes );
 
+		$attributes['source']  = __METHOD__;
+		$attributes['context'] = 'item-single-list-fields';
+
 		if ( empty( $attributes['display_output_type'] ) ) {
 			$attributes['display_output_type'] = 'ul';
 		}
@@ -165,7 +168,13 @@ class Item_Single_List_Fields extends Item_Single {
 
 		$attributes['template_custom'] = '{@' . implode( '.', $magic_tag_data ) . '}';
 
-		return parent::render( $attributes, $content, $block );
+		pods_set_render_is_in_block( true );
+
+		$content = parent::render( $attributes, $content, $block );
+
+		pods_set_render_is_in_block( false );
+
+		return $content;
 	}
 
 	/**

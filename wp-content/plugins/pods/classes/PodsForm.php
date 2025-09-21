@@ -1,6 +1,7 @@
 <?php
 
 use Pods\Whatsit\Field;
+use Pods\API\Whatsit\Value_Field;
 
 /**
  * @package Pods
@@ -227,21 +228,6 @@ class PodsForm {
 		$value           = apply_filters( "pods_form_ui_field_{$type}_value", $value, $name, $options, $pod, $id );
 		$form_field_type = self::$field_type;
 
-		$helper = false;
-
-		$input_helper = pods_v( 'input_helper', $options );
-
-		/**
-		 * Input helpers are deprecated and not guaranteed to work properly.
-		 *
-		 * They will be entirely removed in Pods 3.0.
-		 *
-		 * @deprecated 2.7.0
-		 */
-		if ( is_string( $input_helper ) && 0 < strlen( $input_helper ) ) {
-			$helper = pods_api()->load_helper( array( 'name' => $input_helper ) );
-		}
-
 		if ( empty( $type ) ) {
 			return;
 		}
@@ -273,15 +259,6 @@ class PodsForm {
 			 * @deprecated 2.7.0
 			 */
 			do_action( "pods_form_ui_field_{$type}", $name, $value, $options, $pod, $id );
-		} elseif ( ! empty( $helper ) && 0 < strlen( (string) pods_v( 'code', $helper ) ) && false === strpos( $helper['code'], '$this->' ) && ( ! defined( 'PODS_DISABLE_EVAL' ) || ! PODS_DISABLE_EVAL ) ) {
-			/**
-			 * Input helpers are deprecated and not guaranteed to work properly.
-			 *
-			 * They will be entirely removed in Pods 3.0.
-			 *
-			 * @deprecated 2.7.0
-			 */
-			eval( '?>' . $helper['code'] );
 		} elseif ( method_exists( static::class, 'field_' . $type ) ) {
 			// @todo Move these custom field methods into real/faux field classes
 			echo call_user_func( array( static::class, 'field_' . $type ), $name, $value, $options );
@@ -493,11 +470,29 @@ class PodsForm {
 
 		$attributes = (array) apply_filters( "pods_form_ui_field_{$type}_attributes", $attributes, $name, $options );
 
+		$final_attributes = [];
+
 		foreach ( $attributes as $attribute => $value ) {
 			if ( null === $value ) {
 				continue;
 			}
 
+			if ( 'class' === $attribute ) {
+				$value = pods_enforce_safe_class( $value );
+			} elseif ( 'id' === $attribute ) {
+				$value = pods_enforce_safe_id( $value );
+			}
+
+			$final_attributes[ (string) $attribute ] = (string) $value;
+		}
+
+		if (pods_render_is_in_block()) {
+			echo ' ' . get_block_wrapper_attributes( $final_attributes );
+
+			return;
+		}
+
+		foreach ( $final_attributes as $attribute => $value ) {
 			echo ' ' . esc_attr( (string) $attribute ) . '="' . esc_attr( (string) $value ) . '"';
 		}
 	}
@@ -1474,7 +1469,7 @@ class PodsForm {
 	/**
 	 * Autoload a Field Type's class
 	 *
-	 * @param string $field_type Field Type indentifier
+	 * @param string $field_type Field Type identifier
 	 * @param string $file       The Field Type class file location
 	 *
 	 * @return string
@@ -1510,7 +1505,8 @@ class PodsForm {
 			 *
 			 * @since unknown
 			 *
-			 * @param string $file The file path to include for the field type.
+			 * @param string $file       The file path to include for the field type.
+			 * @param string $field_type The field type.
 			 */
 			$file = apply_filters( 'pods_form_field_include', $file, $field_type );
 
@@ -1547,7 +1543,7 @@ class PodsForm {
 	 * Run a method from a Field Type's class
 	 *
 	 * @return mixed
-	 * @internal param string $field_type Field Type indentifier
+	 * @internal param string $field_type Field Type identifier
 	 * @internal param string $method Method name
 	 * @internal param mixed $arg More arguments
 	 *

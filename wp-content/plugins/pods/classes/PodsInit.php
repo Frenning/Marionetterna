@@ -1,8 +1,7 @@
 <?php
 
 use Pods\Config_Handler;
-use Pods\Static_Cache;
-use Pods\Whatsit\Pod;
+use Pods\Whatsit\Store;
 use Pods\Wisdom_Tracker;
 
 /**
@@ -216,7 +215,7 @@ class PodsInit {
 			);
 
 			if ( ! empty( $loader['exclude_prefix'] ) ) {
-				$class = substr( $class, strlen( $loader['prefix'] ) );
+				$class = substr( $class, strlen( (string) $loader['prefix'] ) );
 			}
 
 			if ( ! empty( $loader['filter'] ) ) {
@@ -246,16 +245,14 @@ class PodsInit {
 	 * Load the plugin textdomain and set default constants
 	 */
 	public function plugins_loaded() {
+		// Set some default constants.
+
 		if ( ! defined( 'PODS_LIGHT' ) ) {
 			define( 'PODS_LIGHT', false );
 		}
 
 		if ( ! defined( 'PODS_TABLELESS' ) ) {
 			define( 'PODS_TABLELESS', false );
-		}
-
-		if ( ! defined( 'PODS_TEXTDOMAIN' ) || PODS_TEXTDOMAIN ) {
-			load_plugin_textdomain( 'pods' );
 		}
 
 		if ( ! defined( 'PODS_STATS_TRACKING' ) || PODS_STATS_TRACKING ) {
@@ -381,7 +378,7 @@ class PodsInit {
 			];
 
 			foreach ( $tlds_to_check as $tld ) {
-				$minus_tld = strlen( $host ) - strlen( $tld );
+				$minus_tld = strlen( (string) $host ) - strlen( (string) $tld );
 
 				if ( $minus_tld === strpos( $host, $tld ) ) {
 					return true;
@@ -560,6 +557,10 @@ class PodsInit {
 		if ( method_exists( $avatar, 'get_avatar_data' ) ) {
 			add_filter( 'get_avatar_data', array( $avatar, 'get_avatar_data' ), 10, 2 );
 		}
+
+		if ( defined( 'PODS_TEXTDOMAIN' ) && PODS_TEXTDOMAIN ) {
+			load_plugin_textdomain( 'pods' );
+		}
 	}
 
 	/**
@@ -581,7 +582,7 @@ class PodsInit {
 		 *
 		 * @since 2.7.23
 		 *
-		 * @param bool $suffix_min Minimized script suffix.
+		 * @param string $suffix_min Minimized script suffix.
 		 */
 		do_action( 'pods_before_enqueue_scripts', $suffix_min );
 
@@ -688,6 +689,17 @@ class PodsInit {
 			);
 		}
 
+		// WordPress pre-6.6 compatibility for react-jsx-runtime.
+		if ( ! wp_script_is( 'react-jsx-runtime', 'registered' ) ) {
+			wp_register_script(
+				'react-jsx-runtime',
+				PODS_URL . 'ui/js/react-jsx-runtime.js',
+				[ 'react' ],
+				'18.3.0',
+				true
+			);
+		}
+
 		// Marionette dependencies for DFV/MV fields.
 		wp_register_script(
 			'pods-backbone-radio',
@@ -770,7 +782,7 @@ class PodsInit {
 		];
 
 		/**
-		 * Allow filtering hte admin config data.
+		 * Allow filtering the admin config data.
 		 *
 		 * @since 2.8.0
 		 *
@@ -844,7 +856,7 @@ class PodsInit {
 		 *
 		 * @since 2.7.23
 		 *
-		 * @param bool $suffix_min Minimized script suffix.
+		 * @param string $suffix_min Minimized script suffix.
 		 */
 		do_action( 'pods_after_enqueue_scripts', $suffix_min );
 	}
@@ -907,7 +919,7 @@ class PodsInit {
 			'delete_with_user' => false,
 		);
 
-		$args = self::object_label_fix( $args, 'post_type' );
+		$args = self::object_label_fix( $args, 'post_type', '_pods_pod' );
 
 		register_post_type( '_pods_pod', apply_filters( 'pods_internal_register_post_type_pod', $args ) );
 
@@ -926,7 +938,7 @@ class PodsInit {
 			'delete_with_user' => false,
 		);
 
-		$args = self::object_label_fix( $args, 'post_type' );
+		$args = self::object_label_fix( $args, 'post_type', '_pods_group' );
 
 		register_post_type( '_pods_group', apply_filters( 'pods_internal_register_post_type_group', $args ) );
 
@@ -945,7 +957,7 @@ class PodsInit {
 			'delete_with_user' => false,
 		);
 
-		$args = self::object_label_fix( $args, 'post_type' );
+		$args = self::object_label_fix( $args, 'post_type', '_pods_field' );
 
 		register_post_type( '_pods_field', apply_filters( 'pods_internal_register_post_type_field', $args ) );
 
@@ -1020,6 +1032,8 @@ class PodsInit {
 		if ( 1 === (int) pods_v( 'pods_debug_register', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
 			pods_debug( [ __METHOD__, compact( 'existing_post_types_cached', 'existing_taxonomies_cached' ) ] );
 		}
+
+		pods_debug_log_data( compact( 'existing_post_types_cached', 'existing_taxonomies_cached' ), 'register-existing', __METHOD__, __LINE__ );
 
 		return compact( 'existing_post_types_cached', 'existing_taxonomies_cached' );
 	}
@@ -1612,7 +1626,7 @@ class PodsInit {
 			$ct_post_types = $options['post_types'];
 			$options       = $options['options'];
 
-			$options = self::object_label_fix( $options, 'taxonomy' );
+			$options = self::object_label_fix( $options, 'taxonomy', $taxonomy );
 
 			// Max length for taxonomies are 32 characters
 			$taxonomy = substr( $taxonomy, 0, 32 );
@@ -1638,6 +1652,8 @@ class PodsInit {
 			if ( 1 === (int) pods_v( 'pods_debug_register', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
 				pods_debug( [ __METHOD__ . '/register_taxonomy', compact( 'taxonomy', 'ct_post_types', 'options' ) ] );
 			}
+
+			pods_debug_log_data( compact( 'taxonomy', 'ct_post_types', 'options' ), 'register-taxonomy', __METHOD__, __LINE__ );
 
 			if ( 1 === (int) pods_v( 'pods_debug_register_export', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
 				echo '<h3>' . esc_html( $taxonomy ) . '</h3>';
@@ -1667,7 +1683,7 @@ class PodsInit {
 				continue;
 			}
 
-			$options = self::object_label_fix( $options, 'post_type' );
+			$options = self::object_label_fix( $options, 'post_type', $post_type );
 
 			// Max length for post types are 20 characters
 			$post_type = substr( $post_type, 0, 20 );
@@ -1691,6 +1707,8 @@ class PodsInit {
 			if ( 1 === (int) pods_v( 'pods_debug_register', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
 				pods_debug( [ __METHOD__ . '/register_post_type', compact( 'post_type', 'options' ) ] );
 			}
+
+			pods_debug_log_data( compact( 'post_type', 'options' ), 'register-post-type', __METHOD__, __LINE__ );
 
 			if ( 1 === (int) pods_v( 'pods_debug_register_export', 'get', 0 ) && pods_is_admin( array( 'pods' ) ) ) {
 				echo '<h3>' . esc_html( $post_type ) . '</h3>';
@@ -1782,7 +1800,7 @@ class PodsInit {
 			$rest_enabled = (boolean) pods_v( 'rest_enable', $pod, false );
 
 			if ( $rest_enabled ) {
-				new PodsRESTFields( $pod['name'] );
+				new PodsRESTFields( $pod );
 			}
 		}
 
@@ -1792,7 +1810,7 @@ class PodsInit {
 			$rest_enabled = (boolean) pods_v( 'rest_enable', $pod, false );
 
 			if ( $rest_enabled ) {
-				new PodsRESTFields( $pod['name'] );
+				new PodsRESTFields( $pod );
 			}
 		}
 
@@ -1818,7 +1836,7 @@ class PodsInit {
 	/**
 	 * Filter whether Quick Edit should be enabled for the given post type.
 	 *
-	 * @since TBD
+	 * @since 3.0.9
 	 *
 	 * @param bool   $enable    Whether to enable the Quick Edit functionality.
 	 * @param string $post_type The post type name.
@@ -1840,7 +1858,7 @@ class PodsInit {
 	/**
 	 * Filter whether Quick Edit should be enabled for the given taxonomy.
 	 *
-	 * @since TBD
+	 * @since 3.0.9
 	 *
 	 * @param bool   $enable   Whether to enable the Quick Edit functionality.
 	 * @param string $taxonomy The taxonomy name.
@@ -1919,7 +1937,7 @@ class PodsInit {
 				continue;
 			}
 
-			$labels = self::object_label_fix( $pods_cpt_ct['post_types'][ $post_type['name'] ], 'post_type' );
+			$labels = self::object_label_fix( $pods_cpt_ct['post_types'][ $post_type['name'] ], 'post_type', $post_type['name'] );
 			$labels = $labels['labels'];
 
 			$revision = (int) pods_v( 'revision' );
@@ -1968,20 +1986,31 @@ class PodsInit {
 		return $messages;
 	}
 
-	/**
-	 * @param        $args
-	 * @param string $type
-	 *
-	 * @return array
-	 */
-	public static function object_label_fix( $args, $type = 'post_type' ) {
+	public static function object_label_fix( array $args, string $type, ?string $name = null ): array {
 
-		if ( empty( $args ) || ! is_array( $args ) ) {
-			$args = array();
+		if ( empty( $args ) ) {
+			$args = [];
 		}
 
 		if ( ! isset( $args['labels'] ) || ! is_array( $args['labels'] ) ) {
-			$args['labels'] = array();
+			$args['labels'] = [];
+		}
+
+		$is_placeholder_label = defined( Store::class . '::PLACEHOLDER' ) && Store::PLACEHOLDER === pods_v( 'label', $args );
+		$is_placeholder_description = defined( Store::class . '::PLACEHOLDER' ) && Store::PLACEHOLDER === pods_v( 'description', $args );
+
+		if ( $is_placeholder_label || $is_placeholder_description ) {
+			$default_object_labels = Store::get_default_object_labels();
+
+			if ( $name && isset( $default_object_labels[ $name ] ) ) {
+				if ( $is_placeholder_label ) {
+					$args['label'] = $default_object_labels[ $name ]['label'] ?? null;
+				}
+
+				if ( $is_placeholder_description ) {
+					$args['description'] = $default_object_labels[ $name ]['description'] ?? null;
+				}
+			}
 		}
 
 		$label          = pods_v( 'name', $args['labels'], pods_v( 'label', $args, __( 'Items', 'pods' ), true ), true );
@@ -2065,7 +2094,7 @@ class PodsInit {
 				// Remove HTML tags and strip script/style tag contents.
 				wp_strip_all_tags(
 					// Decode potential entities at the first level to so HTML tags can be removed.
-					htmlspecialchars_decode( $label )
+					htmlspecialchars_decode( (string) $label )
 				)
 			);
 		}, $labels );
@@ -2085,7 +2114,7 @@ class PodsInit {
 
 		// WP 5.1+.
 		add_action( 'wp_insert_site', array( $this, 'new_blog' ) );
-		// WP < 5.1. (Gets automaticaly removed if `wp_insert_site` is called.
+		// WP < 5.1. (Gets automatically removed if `wp_insert_site` is called.
 		add_action( 'wpmu_new_blog', array( $this, 'new_blog' ) );
 
 		if ( empty( self::$version ) || version_compare( self::$version, PODS_VERSION, '<' ) || version_compare( self::$version, PODS_DB_VERSION, '<=' ) || self::$upgrade_needed ) {
@@ -2343,22 +2372,6 @@ class PodsInit {
 			}
 		}
 
-		$helpers = $api->load_helpers();
-
-		foreach ( $helpers as $helper ) {
-			try {
-				$api->delete_helper( array( 'name' => $helper['name'] ) );
-			} catch ( Exception $exception ) {
-				pods_debug_log( $exception );
-
-				pods_message( sprintf(
-					// translators: %s: Pod helper label.
-					__( 'Cannot delete pod helper "%s"', 'pods' ),
-					$helper['name']
-				), 'error' );
-			}
-		}
-
 		$tables = $wpdb->get_results( "SHOW TABLES LIKE '{$wpdb->prefix}pods%'", ARRAY_N );
 
 		if ( ! empty( $tables ) ) {
@@ -2483,9 +2496,6 @@ class PodsInit {
 
 		// Compatibility with WP 5.4 privacy export.
 		add_filter( 'wp_privacy_additional_user_profile_data', array( $this, 'filter_wp_privacy_additional_user_profile_data' ), 10, 3 );
-
-		// Compatibility for Query Monitor conditionals
-		add_filter( 'query_monitor_conditionals', array( $this, 'filter_query_monitor_conditionals' ) );
 
 		// Support for quick edit in WP 6.4+.
 		add_filter( 'quick_edit_enabled_for_post_type', [ $this, 'quick_edit_enabled_for_post_type' ], 10, 2 );
@@ -2730,23 +2740,5 @@ class PodsInit {
 		}
 
 		return $additional_user_profile_data;
-	}
-
-	/**
-	 * Add Pods conditional functions to Query Monitor.
-	 *
-	 * @param  array $conditionals
-	 * @return array
-	 */
-	public function filter_query_monitor_conditionals( $conditionals ) {
-		$conditionals[] = 'pods_developer';
-		$conditionals[] = 'pods_tableless';
-		$conditionals[] = 'pods_light';
-		$conditionals[] = 'pods_strict';
-		$conditionals[] = 'pods_allow_deprecated';
-		$conditionals[] = 'pods_api_cache';
-		$conditionals[] = 'pods_shortcode_allow_evaluate_tags';
-		$conditionals[] = 'pods_session_auto_start';
-		return $conditionals;
 	}
 }

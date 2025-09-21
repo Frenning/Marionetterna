@@ -1,6 +1,6 @@
 <?php
 /**
- * Utility function for processesing fromtier based templates
+ * Utility function for processesing frontier based templates
  *
  * @package Pods_Frontier_Template_Editor\view_template
  */
@@ -547,6 +547,10 @@ function frontier_do_subtemplate( $atts, $content ) {
 			// Relationship to something that is extended by Pods
 			$entries = $pod->field( array( 'name' => $field_name, 'output' => 'pod' ) );
 			foreach ( $entries as $key => $entry ) {
+				if ( ! is_object( $entry ) ) {
+					continue;
+				}
+
 				$subatts = array(
 					'id' => $entry->id,
 					'pod' => $entry->pod,
@@ -677,14 +681,15 @@ function frontier_pseudo_magic_tags( $template, $data, $pod = null, $skip_unknow
 /**
  * processes template code within an each command from the base template
  *
- * @param array  $code     The code to filter.
- * @param string $template The template to be processed.
- * @param Pods   $pod      The Pods object.
+ * @param string|null $code     The code to filter.
+ * @param string      $template The template to be processed.
+ * @param Pods        $pod      The Pods object.
  *
  * @return null
  * @since 2.4.0
  */
 function frontier_prefilter_template( $code, $template, $pod ) {
+	$code = (string) $code;
 
 	global $frontier_once_tags;
 

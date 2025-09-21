@@ -441,6 +441,31 @@ class PodsField_Pick extends PodsField {
 				'default'     => '',
 				'type'        => 'text',
 			],
+			static::$type . '_sync_taxonomy' => [
+				'label'       => __( 'Sync associated taxonomy with this relationship', 'pods' ),
+				'help'        => __( 'This will automatically sync the associated taxonomy terms with the value of this relationship if this field is on a Pod that is a Post Type. If the associated taxonomy terms are different, they will be overridden on save.', 'pods' ),
+				'wildcard-on' => [
+					static::$type . '_object' => [
+						'^taxonomy-.*$',
+					],
+				],
+				'type'           => 'boolean',
+				'default'        => 0,
+			],
+			static::$type . '_sync_taxonomy_hide_taxonomy_ui' => [
+				'label'       => __( 'Hide the associated taxonomy UI from the Editor', 'pods' ),
+				'help'        => __( 'This will hide the taxonomy meta box from the Classic Editor and disable the taxonomy panel in the Block Editor.', 'pods' ),
+				'depends-on'  => [
+					static::$type . '_sync_taxonomy' => true,
+				],
+				'wildcard-on' => [
+					static::$type . '_object' => [
+						'^taxonomy-.*$',
+					],
+				],
+				'type'           => 'boolean',
+				'default'        => 0,
+			],
 		];
 
 		$post_type_pick_objects = array();
@@ -1250,7 +1275,7 @@ class PodsField_Pick extends PodsField {
 		 *
 		 * @param boolean $show_on_front
 		 * @param array $config
-		 * @param array $args
+		 * @param object $args
 		 *
 		 * @since 2.7.0
 		 */
@@ -1261,7 +1286,7 @@ class PodsField_Pick extends PodsField {
 		 *
 		 * @param boolean $allow_nested_modals
 		 * @param array $config
-		 * @param array $args
+		 * @param object $args
 		 *
 		 * @since 2.7.0
 		 */
@@ -1378,7 +1403,7 @@ class PodsField_Pick extends PodsField {
 		 *
 		 * @param array $iframe
 		 * @param array $config
-		 * @param array $args
+		 * @param object $args
 		 *
 		 * @since 2.7.0
 		 */
@@ -1916,24 +1941,28 @@ class PodsField_Pick extends PodsField {
 		} elseif ( $options instanceof Field || $options instanceof Value_Field ) {
 			$related_field = $options->get_bidirectional_field();
 
-			if ( ! $related_field ) {
-				return;
-			}
+			if ( $related_field ) {
+				$related_pod        = $related_field->get_parent_object();
+				$related_pick_limit = $related_field->get_limit();
 
-			$related_pod        = $related_field->get_parent_object();
-			$related_pick_limit = $related_field->get_limit();
+				if ( null === $current_ids ) {
+					$current_ids = self::$api->lookup_related_items( $options['id'], $pod['id'], $id, $options, $pod );
+				}
 
-			if ( null === $current_ids ) {
-				$current_ids = self::$api->lookup_related_items( $options['id'], $pod['id'], $id, $options, $pod );
-			}
-
-			// Get ids to remove.
-			if ( null === $remove_ids ) {
-				$remove_ids = array_diff( $current_ids, $value_ids );
+				// Get ids to remove.
+				if ( null === $remove_ids ) {
+					$remove_ids = array_diff( $current_ids, $value_ids );
+				}
 			}
 		}
 
-		if ( empty( $related_field ) || empty( $related_pod ) ) {
+		if (
+			(
+				empty( $related_field )
+				|| empty( $related_pod )
+			)
+			&& empty( $options[ static::$type . '_sync_taxonomy' ] )
+		) {
 			return;
 		}
 
@@ -2013,6 +2042,34 @@ class PodsField_Pick extends PodsField {
 		// Remove this ID from the related IDs.
 		if ( ! empty( $remove_ids ) ) {
 			self::$api->delete_relationships( $remove_ids, $id, $related_pod, $related_field );
+		}
+
+		// Handle syncing of taxonomy terms.
+		if ( ! empty( $pod['type'] ) && 'post_type' === $pod['type'] && ! empty( $options[ static::$type . '_sync_taxonomy' ] ) ) {
+			// Check if post type has the same attached taxonomy.
+			$taxonomies_available = get_object_taxonomies( $pod['name'] );
+			$taxonomies_available = array_flip( $taxonomies_available );
+
+			if ( $options instanceof Field || $options instanceof Value_Field ) {
+				$taxonomy_name = $options->get_related_object_name();
+
+				if ( isset( $taxonomies_available[ $taxonomy_name ] ) ) {
+					/**
+					 * Allow filtering the list of term IDs that will be synced for a field.
+					 *
+					 * @since 3.2.4
+					 *
+					 * @param array  $term_ids_to_sync The list of term IDs to sync.
+					 * @param Field  $field            The field object.
+					 * @param int    $id               The post ID.
+					 * @param string $taxonomy_name    The taxonomy name being synced.
+					 */
+					$term_ids_to_sync = apply_filters( 'pods_field_pick_save_sync_taxonomy_term_ids', $value_ids, $options, $id, $taxonomy_name );
+
+					// Update the taxonomy terms for the current post.
+					wp_set_post_terms( $id, $term_ids_to_sync, $taxonomy_name );
+				}
+			}
 		}
 
 		if ( ! $no_conflict ) {
@@ -2174,7 +2231,7 @@ class PodsField_Pick extends PodsField {
 		 * @param array|null      $pod                             Pod information.
 		 * @param int|string|null $id                              Current item ID.
 		 */
-		$always_show_default_select_text = (bool) apply_filters( 'pods_field_pick_always_show_default_select_text', false, $data, $name, $value, $options, $pod, $id );
+		$always_show_default_select_text = (bool) apply_filters( 'pods_field_pick_always_show_default_select_text', (bool) pods_v( static::$type . '_select_text_always_show', $options, false ), $data, $name, $value, $options, $pod, $id );
 
 		if (
 			'single' === pods_v( static::$type . '_format_type', $options, 'single' )
@@ -2639,13 +2696,27 @@ class PodsField_Pick extends PodsField {
 				$params = array(
 					'select'     => "`t`.`{$search_data->field_id}`, `t`.`{$search_data->field_index}`",
 					'table'      => $search_data->table,
-					'where'      => pods_v( static::$type . '_where', $options, (array) $table_info['where_default'], true ),
+					'where'      => pods_v( static::$type . '_where', $options, null, true ),
 					'orderby'    => pods_v( static::$type . '_orderby', $options, null, true ),
 					'having'     => pods_v( static::$type . '_having', $options, null, true ),
 					'groupby'    => pods_v( static::$type . '_groupby', $options, null, true ),
 					'pagination' => false,
 					'search'     => false,
 				);
+
+				if ( ! pods_can_use_dynamic_feature_sql_clauses( 'simple' ) ) {
+					$params['where'] = $params['where'] ? '0=1 /* Dynamic SQL clauses disabled in Pods */' : (array) $table_info['where_default'];
+					$params['orderby'] = null;
+				}
+
+				if ( ! pods_can_use_dynamic_feature_sql_clauses( 'all' ) ) {
+					$params['having']  = null;
+					$params['groupby'] = null;
+				}
+
+				if ( null === $params['where'] ) {
+					$params['where'] = (array) $table_info['where_default'];
+				}
 
 				if ( in_array( $options[ static::$type . '_object' ], array( 'site', 'network' ), true ) ) {
 					$params['select'] .= ', `t`.`path`';
@@ -2786,31 +2857,33 @@ class PodsField_Pick extends PodsField {
 					$params['page'] = $page;
 
 					if ( 'admin_ajax_relationship' === $context ) {
+						$query_sanitized_like = pods_sanitize_like( $data_params['query'] );
+
 						$lookup_where = array(
-							$search_data->field_index => "`t`.`{$search_data->field_index}` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'",
+							$search_data->field_index => "`t`.`{$search_data->field_index}` LIKE '%{$query_sanitized_like}%'",
 						);
 
 						if ( $display_field_name !== $search_data->field_index ) {
-							$lookup_where[ $display_field_name ] = "{$display_field} LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
+							$lookup_where[ $display_field_name ] = "{$display_field} LIKE '%{$query_sanitized_like}%'";
 						}
 
 						// @todo Hook into WPML for each table
 						if ( $wpdb->users === $search_data->table ) {
-							$lookup_where['display_name'] = "`t`.`display_name` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['user_login']   = "`t`.`user_login` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['user_email']   = "`t`.`user_email` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
+							$lookup_where['display_name'] = "`t`.`display_name` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['user_login']   = "`t`.`user_login` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['user_email']   = "`t`.`user_email` LIKE '%{$query_sanitized_like}%'";
 						} elseif ( $wpdb->posts === $search_data->table ) {
-							$lookup_where['post_title']   = "`t`.`post_title` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['post_name']    = "`t`.`post_name` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['post_content'] = "`t`.`post_content` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['post_excerpt'] = "`t`.`post_excerpt` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
+							$lookup_where['post_title']   = "`t`.`post_title` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['post_name']    = "`t`.`post_name` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['post_content'] = "`t`.`post_content` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['post_excerpt'] = "`t`.`post_excerpt` LIKE '%{$query_sanitized_like}%'";
 						} elseif ( $wpdb->terms === $search_data->table ) {
-							$lookup_where['name'] = "`t`.`name` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['slug'] = "`t`.`slug` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
+							$lookup_where['name'] = "`t`.`name` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['slug'] = "`t`.`slug` LIKE '%{$query_sanitized_like}%'";
 						} elseif ( $wpdb->comments === $search_data->table ) {
-							$lookup_where['comment_content']      = "`t`.`comment_content` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['comment_author']       = "`t`.`comment_author` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
-							$lookup_where['comment_author_email'] = "`t`.`comment_author_email` LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%'";
+							$lookup_where['comment_content']      = "`t`.`comment_content` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['comment_author']       = "`t`.`comment_author` LIKE '%{$query_sanitized_like}%'";
+							$lookup_where['comment_author_email'] = "`t`.`comment_author_email` LIKE '%{$query_sanitized_like}%'";
 						}
 
 						$lookup_where = apply_filters( 'pods_form_ui_field_pick_autocomplete_lookup', $lookup_where, $data_params['query'], $name, $value, $options, $pod, $id, $object_params, $search_data );
@@ -2820,9 +2893,13 @@ class PodsField_Pick extends PodsField {
 						}
 
 						$orderby   = array();
-						$orderby[] = "( {$display_field} LIKE '%" . pods_sanitize_like( $data_params['query'] ) . "%' ) DESC";
+						$orderby[] = "( {$display_field} LIKE '%{$query_sanitized_like}%' ) DESC";
 
 						$pick_orderby = pods_v( static::$type . '_orderby', $options, null, true );
+
+						if ( ! pods_can_use_dynamic_feature_sql_clauses( 'simple' ) ) {
+							$pick_orderby = null;
+						}
 
 						if ( is_string( $pick_orderby ) && 0 < strlen( $pick_orderby ) ) {
 							$orderby[] = $pick_orderby;
@@ -2872,7 +2949,9 @@ class PodsField_Pick extends PodsField {
 								continue;
 							}
 
-							$where[] = $wpdb->prefix . 'capabilities.meta_value LIKE "%\"' . pods_sanitize_like( $role ) . '\"%"';
+							$role_sanitized_like = pods_sanitize_like( $role );
+
+							$where[] = "{$wpdb->prefix}capabilities.meta_value LIKE '%\"{$role_sanitized_like}\"%'";
 						}
 
 						if ( ! empty( $where ) ) {
@@ -4189,7 +4268,7 @@ class PodsField_Pick extends PodsField {
 
 		$user = get_userdata( $user_id );
 
-		if ( ! $user || is_wp_error( $user ) ) {
+		if ( ! $user ) {
 			return $location;
 		}
 

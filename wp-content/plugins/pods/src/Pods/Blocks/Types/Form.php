@@ -254,6 +254,9 @@ class Form extends Base {
 		$attributes = $this->attributes( $attributes );
 		$attributes = array_map( 'pods_trim', $attributes );
 
+		$attributes['source']  = __METHOD__;
+		$attributes['context'] = 'form';
+
 		// Prevent any previews of this block.
 		if ( $this->in_editor_mode( $attributes ) ) {
 			return $this->render_placeholder(
@@ -277,6 +280,12 @@ class Form extends Base {
 			}
 		}
 
-		return pods_shortcode_form( $attributes );
+		pods_set_render_is_in_block( true );
+
+		$content = pods_shortcode_form( $attributes );
+
+		pods_set_render_is_in_block( false );
+
+		return $content;
 	}
 }

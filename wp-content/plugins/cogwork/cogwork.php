@@ -5,7 +5,7 @@
  Description: Enables shortcodes that loads and displays content from CogWork (MinaAktiviteter/Dans.se/Idrott.se)
  Author: CogWork AB
  Text Domain: cogwork
- Version: 1.8.2
+ Version: 1.8.5
  Author URI: https://minaaktiviteter.se/cogwork/
  */
 

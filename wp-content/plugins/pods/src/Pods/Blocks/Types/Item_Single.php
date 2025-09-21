@@ -224,6 +224,9 @@ class Item_Single extends Base {
 		$attributes = $this->attributes( $attributes );
 		$attributes = array_map( 'pods_trim', $attributes );
 
+		$attributes['source']  = __METHOD__;
+		$attributes['context'] = 'item-single';
+
 		if (
 			empty( $attributes['template'] )
 			&& empty( $attributes['template_custom'] )
@@ -276,6 +279,12 @@ class Item_Single extends Base {
 			unset( $attributes['use_current'] );
 		}
 
-		return pods_shortcode( $attributes, $attributes['template_custom'] );
+		pods_set_render_is_in_block( true );
+
+		$content = pods_shortcode( $attributes, $attributes['template_custom'] );
+
+		pods_set_render_is_in_block( false );
+
+		return $content;
 	}
 }
