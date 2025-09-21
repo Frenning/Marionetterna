@@ -6,7 +6,7 @@ const sass = require('gulp-sass')(require('sass'));
 function build() {
   return gulp.src('./inc/sass/**/*.scss')
     .pipe(sass().on('error', sass.logError))
-    .pipe(gulp.dest('./'));
+    .pipe(gulp.dest('./inc/css'));
 };
 
 exports.build = build;
