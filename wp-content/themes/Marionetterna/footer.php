@@ -23,14 +23,11 @@
 						<?php echo $kontakt->display('content');?>
 					</div>
 					<div class="footer-content col-md-4 col-sm-6">
-						<?php 
-						$kontakt = pods('kontakt', $id="mail"); 
-						echo $kontakt->display('content');
-						$kontakt = pods('anvandarvillkor', $id="anvandarvillkor"); 
-						echo $kontakt->display('content');
-						$kontakt = pods('anvandarvillkor', $id="personliga-uppgifter"); 
-						echo $kontakt->display('content');
-						?>	
+						<ul>
+							<li><a href="mailto:info@marionetterna.se">Maila till Marionetterna</a></li>
+							<li><a href="<?php echo site_url('/anvandarvillkor'); ?>">Användarvillkor</a></li>
+							<li><a href="<?php echo site_url('/personliga-uppgifter'); ?>">Personliga uppgifter</a></li>
+						</ul>
 					</div>
 					<div class="footer-content col-md-4 col-sm-12">
 						<?php

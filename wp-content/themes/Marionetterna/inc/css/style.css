@@ -35,11 +35,6 @@ button {
   background-color: #000E;
   border-radius: 10px;
 }
-button::-moz-focus-inner {
-  /* Corrects inner padding and border displayed oddly in FF3/4 www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ */
-  border: 0;
-  padding: 0;
-}
 
 a {
   text-decoration: none;
@@ -112,9 +107,6 @@ button, input, select, textarea {
   margin: 0;
   /* Addresses margins set differently in IE6/7, F3/4, S5, Chrome */
   vertical-align: baseline;
-  /* Improves appearance and consistency in all browsers */
-  *vertical-align: middle;
-  /* Improves appearance and consistency in all browsers */
 }
 
 /* =Custom Styles
@@ -125,9 +117,9 @@ button, input, select, textarea {
   margin-bottom: 10px;
   float: left;
   min-height: 662px;
-}
-.img-leaders img {
-  border-radius: 10px;
+  img {
+    border-radius: 10px;
+  }
 }
 
 .headline-area {
@@ -143,23 +135,6 @@ button, input, select, textarea {
 
 #primary {
   position: relative;
-}
-
-.frontPageButton {
-  display: block;
-  width: fit-content;
-  margin: 15px auto;
-  clear: both;
-  font-size: 26px;
-}
-.frontPageButton > a {
-  display: block;
-  width: inherit;
-  height: inherit;
-  padding: 20px;
-}
-.frontPageButton:hover {
-  background-color: #DAA520;
 }
 
 .pageContent {
