@@ -54,6 +54,10 @@ a {
   }
 }
 
+ul {
+  list-style-type: none;
+}
+
 h1, h2, h3, h4, h5, h6 {
   padding: 10px 0px;
   color: #000E;
@@ -255,9 +259,7 @@ button, input, select, textarea {
   color: #CCC;
   font-size: 12px;
 }
-#footer-area ul li {
-  border-bottom: 1px solid #444;
-}
+
 #footer-area p {
   color: #FFFE;
 }

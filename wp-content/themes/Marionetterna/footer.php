@@ -31,16 +31,16 @@
 					</div>
 					<div class="footer-content col-md-4 col-sm-12">
 						<?php
-						$param = array(
-							'limit' => -1,
-						);
+							$param = array(
+								'limit' => -1,
+							);
 
-						$socialmedia = pods('social-media', $param);
-						while ( $socialmedia ->fetch() ) { 
-						?>
-						<a class="social-icons" href="<?php echo $socialmedia->field('medialink'); ?>"><?php echo get_the_post_thumbnail($socialmedia->ID()); ?></a>
-						<?php 
-						} 
+							$socialmedia = pods('social-media', $param);
+							while ( $socialmedia ->fetch() ) { 
+								?>
+									<a class="social-icons" href="<?php echo $socialmedia->field('medialink'); ?>"><?php echo get_the_post_thumbnail($socialmedia->ID()); ?></a>
+								<?php 
+							} 
 						?>
 					</div>
 				</div>
