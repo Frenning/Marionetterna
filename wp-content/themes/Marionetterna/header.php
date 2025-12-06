@@ -4,7 +4,7 @@
  *
  * Displays all of the <head> section and everything up till <div id="content">
  *
- * @package dazzling
+ * @package marionetterna
  */
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -34,9 +34,7 @@
 				</div><!-- end of #logo -->
 			</div>
 			<?php 
-				// TODO: replace dazzling header
-				//header_nav_menu("primary");
-				dazzling_header_menu(); 
+				marionetterna_header_menu(); 
 			?>
 			<button id="hamburger-button" class="hamburger hamburger--elastic" type="button">
 				<span class="hamburger-box">

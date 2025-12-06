@@ -20,5 +20,6 @@
       </div>
     </div><!--frontPageContent-->
   </div><!-- #primary -->
+  <div class="scroll-to-top"><i class="fa fa-angle-up"></i></div><!-- .scroll-to-top -->
 </div><!-- close .row -->
 <?php get_footer(); ?>

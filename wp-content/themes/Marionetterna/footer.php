@@ -45,7 +45,6 @@
 					</div>
 				</div>
 			</div>
-			<div class="scroll-to-top"><i class="fa fa-angle-up"></i></div><!-- .scroll-to-top -->
 		</div><!-- #colophon -->
 	</div><!-- #footer-area -->
 </div><!-- #page -->

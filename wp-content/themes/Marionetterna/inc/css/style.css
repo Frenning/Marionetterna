@@ -99,6 +99,8 @@ p, span, li, th, tr, td {
 }
 
 img {
+  display: block;
+  margin: auto;
   height: auto;
   /* Make sure images are scaled correctly. */
   max-width: 100%;
@@ -115,6 +117,10 @@ button, input, select, textarea {
 
 /* =Custom Styles
 ----------------------------------------------- */
+#primary {
+  position: relative;
+}
+
 .img-leaders {
   border-radius: 10px;
   margin-top: 20px;
@@ -135,10 +141,6 @@ button, input, select, textarea {
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
-}
-
-#primary {
-  position: relative;
 }
 
 .pageContent {
@@ -177,21 +179,43 @@ button, input, select, textarea {
 }
 
 .social-icons {
+  display: flex;
+  float: left;
   padding-right: 10px;
 }
 
 .fp-posts {
   border-top: solid #666 1px;
-  padding-top: 10px;
   font-size: 16px;
-}
-.fp-posts:first-child {
-  border: none;
-  padding-top: 0px;
+  padding-top: 10px;
+  margin: auto 40px;
+  &:first-child {
+    border: none;
+    padding-top: 0px;
+  }
 }
 
 .wp-block-image.aligncenter {
   display: block;
+}
+
+.scroll-to-top {
+  /* When user scrolls JS change display to block */
+  display: none;
+  position: fixed;
+  right: 20px;
+  bottom: 4%;
+  z-index: 999;
+  cursor: pointer;
+  background: #DAA520;
+  font-size: 16px;
+  padding: 2px 10px;
+  border-radius: 4px;
+  transition: background-color 0.1s linear;
+  &:hover {
+    background: #FFF;
+    opacity: 0.8;
+  }
 }
 
 /* Alignment */
@@ -277,35 +301,6 @@ button, input, select, textarea {
   margin: 0 auto;
 }
 
-@media (max-width: 992px) {
-  .footer-content > a {
-    margin: 10px 0 0 0;
-    float: left;
-  }
-}
-.scroll-to-top {
-  background: #3B3B3B;
-  background: rgba(0, 0, 0, 0.4);
-  color: #FFF;
-  bottom: 4%;
-  cursor: pointer;
-  display: none;
-  position: fixed;
-  right: 20px;
-  z-index: 999;
-  font-size: 16px;
-  padding: 2px 10px;
-  border-radius: 4px;
-  -webkit-transition: background-color 0.1s linear;
-  -moz-transition: background-color 0.1s linear;
-  -o-transition: background-color 0.1s linear;
-  transition: background-color 0.1s linear;
-}
-.scroll-to-top:hover {
-  background: #DAA520;
-  opacity: 0.8;
-}
-
 /* Text meant only for screen readers */
 .screen-reader-text {
   clip: rect(1px, 1px, 1px, 1px);
@@ -333,3 +328,13 @@ button, input, select, textarea {
 
 /* =Mobile Styling
 ----------------------------------------------- */
+
+@media (max-width: 992px) {
+  .footer-content > a {
+    margin: 10px 0 0 0;
+    float: left;
+  }
+  .fp-posts {
+    margin: auto 10px;
+  }
+}
