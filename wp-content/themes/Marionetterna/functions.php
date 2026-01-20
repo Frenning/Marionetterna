@@ -8,7 +8,8 @@
 // Adds theme support
 if ( ! function_exists( 'marionetterna_setup' ) ) :
     function marionetterna_setup() {
-
+      // Enable support for Post thumbnails.
+      add_theme_support( 'post-thumbnails' );
       // Enable support for Post Formats.
       add_theme_support( 'post-formats', array( 'aside', 'audio', 'chat', 'gallery', 'image', 'link', 'quote', 'status', 'video' ) );
 
