@@ -2,7 +2,7 @@
 /**
  * The template for displaying 404 pages (Not Found).
  *
- * @package dazzling
+ * @package marionetterna
  */
 
 get_header(); ?>
@@ -11,11 +11,11 @@ get_header(); ?>
 
 				<section class="error-404 not-found">
 					<header class="page-header">
-						<h1 class="page-title"><?php _e( 'Oops! That page can&rsquo;t be found.', 'dazzling' ); ?></h1>
+						<h1 class="page-title"><?php _e( 'Oops! That page can&rsquo;t be found.', 'marionetterna' ); ?></h1>
 					</header><!-- .page-header -->
 
 					<div class="page-content">
-						<p><?php _e( 'It looks like nothing was found at this location.', 'dazzling' ); ?></p>
+						<p><?php _e( 'It looks like nothing was found at this location.', 'marionetterna' ); ?></p>
 
 					</div><!-- .page-content -->
 				</section><!-- .error-404 -->

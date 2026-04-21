@@ -1,18 +1,24 @@
 /*
-Theme Name: Marionetterna
-*/
-/* Table of content
------------------------------------------------
-1. Global
-2. Widgets
-3. Buttons
-4. Custom Styles
-5. Navigation
-6. Footer
-7. Mobile Styling
-*/
-/* =Global
------------------------------------------------ */
+ * Theme Name: Marionetterna
+ *
+ * Table of Contents
+ * -----------------------------------------------
+ * 1. Imports & Fonts
+ * 2. Global / Reset
+ * 3. Typography
+ * 4. Links
+ * 5. Lists
+ * 6. Custom Styles
+ * 7. Widgets
+ * 8. Footer
+ * 9. Utility Classes
+ * 10. Mobile Styling
+ */
+
+
+/* ==========================================================================
+   1. Imports & Fonts
+   ========================================================================== */
 
 @import url("hamburgers.css");
 @import url("header.css");
@@ -21,51 +27,57 @@ Theme Name: Marionetterna
   font-family: customFont;
   src: url(../../inc/fonts/Mooli-Regular.ttf) format("truetype");
 }
+
+
+/* ==========================================================================
+   2. Global / Reset
+   ========================================================================== */
+
 body {
   font-family: customFont;
-  word-wrap: normal;
-  line-height: 1.7;
   font-size: 14px !important;
+  line-height: 1.7;
+  word-wrap: normal;
   padding: 0 !important;
   margin: 0 !important;
   overflow-x: scroll;
 }
 
 button {
-  background-color: #000E;
+  background-color: #000e;
   border-radius: 10px;
 }
 
-a {
-  text-decoration: none;
-  -webkit-transition: all 0.2s;
-  -moz-transition: all 0.2s;
-  -o-transition: all 0.2s;
-  transition: all 0.2s;
-  color: #DAA520;
-  &:hover, &:active{
-    color: #0056b3;
-  }
-  &:focus {
-    text-decoration: none;
-    outline: thin dotted;
-    outline: 5px auto -webkit-focus-ring-color;
-    outline-offset: -2px;
-  }
+button,
+input,
+select,
+textarea {
+  font-size: 100%;
+  margin: 0;
+  vertical-align: baseline;
 }
 
-ul {
-  list-style-type: none;
+img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  margin: auto;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  padding: 10px 0px;
-  color: #000E;
+
+/* ==========================================================================
+   3. Typography
+   ========================================================================== */
+
+h1, h2, h3,
+h4, h5, h6 {
+  padding: 10px 0;
+  color: #000e;
 }
 
 h1, .h1 {
   font-size: 42px;
-  padding: 10px 0px 10px 0px;
+  padding: 10px 0;
   border-bottom: 1px solid black;
   text-align: center;
 }
@@ -86,39 +98,88 @@ h5, .h5 {
   font-size: 16px;
   font-weight: bold;
   margin-top: 5px;
-  margin-bottom: 0px;
+  margin-bottom: 0;
 }
 
 h6, .h6 {
   font-size: 14px;
-  margin: 0px;
-}
-
-p, span, li, th, tr, td {
-  color: #111E;
-}
-
-img {
-  display: block;
-  margin: auto;
-  height: auto;
-  /* Make sure images are scaled correctly. */
-  max-width: 100%;
-  /* Adhere to container width. */
-}
-
-button, input, select, textarea {
-  font-size: 100%;
-  /* Corrects font size not being inherited in all browsers */
   margin: 0;
-  /* Addresses margins set differently in IE6/7, F3/4, S5, Chrome */
-  vertical-align: baseline;
 }
 
-/* =Custom Styles
------------------------------------------------ */
+p, span, li,
+th, tr, td {
+  color: #111e;
+}
+
+
+/* ==========================================================================
+   4. Links
+   ========================================================================== */
+
+a {
+  color: #daa520;
+  text-decoration: underline;
+  transition: all 0.2s;
+  -webkit-transition: all 0.2s;
+  -moz-transition: all 0.2s;
+  -o-transition: all 0.2s;
+}
+
+a:hover,
+a:active {
+  color: #0056b3;
+}
+
+a:focus {
+  text-decoration: none;
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+
+/* ==========================================================================
+   5. Lists
+   ========================================================================== */
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+ul li p {
+  margin-bottom: 0;
+}
+
+
+/* ==========================================================================
+   6. Custom Styles
+   ========================================================================== */
+
 #primary {
   position: relative;
+}
+
+.background-image {
+  background-image: url("../../assets/images/marionetterna1-blur.jpeg");
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.page-content {
+  display: table;
+  height: fit-content;
+  min-height: 1020px;
+  margin: 25px auto;
+  padding: 25px 10px;
+  clear: both;
+  background-color: #fff;
+  border-radius: 25px;
+}
+
+.content-area {
+  margin: auto 40px;
 }
 
 .img-leaders {
@@ -127,50 +188,10 @@ button, input, select, textarea {
   margin-bottom: 10px;
   float: left;
   min-height: 662px;
-  img {
-    border-radius: 10px;
-  }
 }
 
-.headline-area {
-  padding: 40px 0;
-}
-
-.backgroundImage {
-  background-image: url("../../assets/images/marionetterna1-blur.jpeg");
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
-.pageContent {
-  display: table;
-  height: fit-content;
-  min-height: 1020px;
-  margin: 25px auto;
-  padding: 25px 10px;
-  clear: both;
-  background-color: #FFF;
-  border-radius: 25px;
-}
-
-.resultat-scroll {
-  overflow-x: scroll;
-}
-
-.cwRegForm, .cwArea {
-  overflow-x: scroll;
-}
-
-.postArea {
-  width: fit-content;
-  border-bottom: 1px solid black;
-  min-height: 50px;
-  margin: auto;
-}
-
-.kontakt-info {
-  margin: 0px;
+.img-leaders img {
+  border-radius: 10px;
 }
 
 .maps-image {
@@ -188,125 +209,112 @@ button, input, select, textarea {
   border-top: solid #666 1px;
   font-size: 16px;
   padding-top: 10px;
-  margin: auto 40px;
-  &:first-child {
-    border: none;
-    padding-top: 0px;
-  }
+}
+
+.fp-posts:first-child {
+  border: none;
+  padding-top: 0;
 }
 
 .wp-block-image.aligncenter {
   display: block;
 }
 
+.wp-block-column.is-vertically-aligned-center {
+  align-self: auto;
+}
+
+.cwRegForm,
+.cwArea {
+  overflow-x: scroll;
+}
+
 .scroll-to-top {
-  /* When user scrolls JS change display to block */
-  display: none;
+  display: none; /* JS toggles this to block on scroll */
   position: fixed;
   right: 20px;
   bottom: 4%;
   z-index: 999;
   cursor: pointer;
-  background: #DAA520;
-  font-size: 16px;
+  background: #daa520;
   padding: 2px 10px;
   border-radius: 4px;
   transition: background-color 0.1s linear;
-  &:hover {
-    background: #FFF;
-    opacity: 0.8;
-  }
 }
 
-/* Alignment */
-.alignLeft {
-  display: inline;
-  float: left;
-  margin-right: 1.5em;
+.scroll-to-top:hover {
+  background: #fff;
+  opacity: 0.8;
 }
 
-.alignRight {
-  display: inline;
-  float: right;
-  margin-left: 1.5em;
-}
-
-.alignCenter {
+.align-center {
+  display: block;
   width: fit-content;
   clear: both;
-  display: block;
   margin: 0 auto;
 }
 
-/* =Widgets
------------------------------------------------ */
+
+/* ==========================================================================
+   7. Widgets
+   ========================================================================== */
+
 #sidebar {
-  margin: auto;
+  margin: 20px auto;
 }
 
 .widget {
   display: flex;
   float: left;
-  color: #FFFE;
+  color: #fffe;
   font-size: 16px;
 }
+
 .widget a {
   margin: auto;
-}
-
-.wp-block-column.is-vertically-aligned-center {
-  align-self: auto;
 }
 
 .thumbnail {
   margin: auto;
 }
 
-/* Layout */
-.no-sidebar #secondary, .full-width #secondary {
-  display: none;
-}
 
-.no-sidebar #primary {
-  float: none;
-  margin: 0 auto;
-}
+/* ==========================================================================
+   8. Footer
+   ========================================================================== */
 
-.full-width #primary {
-  width: 100%;
-}
-
-/* =Footer
------------------------------------------------ */
 #footer-area {
-  background-color: #313233;
-  color: #CCC;
+  background-color: #1f1f1f;
+  color: #ccc;
   font-size: 12px;
 }
 
 #footer-area p {
-  color: #FFFE;
-}
-
-#colophon {
-  background-color: #1F1F1F;
-  padding: 10px 0;
-  border-top: 1px solid #3A3A3A;
+  color: #fffe;
 }
 
 .footer-content {
   margin: auto;
 }
+
 .footer-content > p {
   margin: 0 auto;
 }
+
+
+/* ==========================================================================
+   9. Utility Classes
+   ========================================================================== */
 
 /* Text meant only for screen readers */
 .screen-reader-text {
   clip: rect(1px, 1px, 1px, 1px);
   position: absolute !important;
 }
-.screen-reader-text:hover, .screen-reader-text:active, .screen-reader-text:focus {
+
+.screen-reader-text:hover,
+.screen-reader-text:active,
+.screen-reader-text:focus {
   background-color: #f1f1f1;
   border-radius: 3px;
   box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
@@ -322,19 +330,21 @@ button, input, select, textarea {
   text-decoration: none;
   top: 5px;
   width: auto;
-  z-index: 100000;
-  /* Above WP toolbar */
+  z-index: 100000; /* Above WP toolbar */
 }
 
-/* =Mobile Styling
------------------------------------------------ */
+
+/* ==========================================================================
+   10. Mobile Styling
+   ========================================================================== */
 
 @media (max-width: 992px) {
   .footer-content > a {
     margin: 10px 0 0 0;
     float: left;
   }
-  .fp-posts {
+
+  .content-area {
     margin: auto 10px;
   }
 }
