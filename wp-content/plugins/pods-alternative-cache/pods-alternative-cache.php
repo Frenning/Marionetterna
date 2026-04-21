@@ -1,15 +1,50 @@
 <?php
-/*
-Plugin Name: Pods Alternative Cache
-Plugin URI: https://pods.io/2014/04/16/introducing-pods-alternative-cache/
-Requires Plugins: pods
-Description: Alternative caching engine for Pods for large sites on hosts with hard limits on how much you can store in the object cache
-Version: 2.2.1
-Author: Pods Framework Team
-Author URI: https://pods.io/
-*/
+/**
+ * Pods - Custom Content Types and Fields
+ *
+ * @package   Pods_Alternative_Cache
+ * @author    Pods Framework Team
+ * @copyright 2026 Pods Foundation, Inc
+ * @license   GPL v2 or later
+ *
+ * Plugin Name:       Pods Alternative Cache
+ * Plugin URI:        https://pods.io/2014/04/16/introducing-pods-alternative-cache/
+ * Requires Plugins:  pods
+ * Description:       Alternative caching engine for Pods for large sites on hosts with hard limits on how much you can store in the object cache
+ * Version:           2.3.0
+ * Author:            Pods Framework Team
+ * Author URI:        https://pods.io/about/
+ * Text Domain:       pods-alternative-cache
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires at least: 6.3
+ * Requires PHP:      7.2
+ * GitHub Plugin URI: https://github.com/pods-framework/pods-alternative-cache
+ * Primary Branch:    main
+ * Plugin ID:         did:plc:qeiu3abntifrwldvbmoctwg3
+ */
 
-define( 'PODS_ALT_CACHE_VERSION', '2.2.1' );
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see https://www.gnu.org/licenses/gpl-2.0.html.
+ */
+
+// Don't load directly.
+if ( ! defined( 'ABSPATH' ) ) {
+	die( '-1' );
+}
+
+define( 'PODS_ALT_CACHE_VERSION', '2.3.0' );
 define( 'PODS_ALT_CACHE_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
@@ -57,7 +92,8 @@ add_action( 'plugins_loaded', 'pods_alternative_cache_init', 5 );
  * @return bool
  */
 function pods_alternative_cache_is_debug_enabled() {
-	return defined( 'PODS_ALT_CACHE_DEBUG' ) && PODS_ALT_CACHE_DEBUG && ! empty( $_GET['altcache_debug'] );
+	// @phpstan-ignore-next-line
+	return defined( 'PODS_ALT_CACHE_DEBUG' ) && PODS_ALT_CACHE_DEBUG && 1 === (int) pods_v( 'altcache_debug' );
 }
 
 /**
@@ -112,10 +148,10 @@ function pods_alternative_cache_log_message( $message, $method, $args = [], $mod
 	$debug_args = '';
 
 	if ( $args ) {
-		$debug_args = ' <pre style="margin-left:40px;">' . var_export( $args, true ) . '</pre>';
+		$debug_args = ' <pre style="margin-left:40px;">' . var_export( $args, true ) . '</pre>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 	}
 
-	echo $start . esc_html( '[' . $method . '] ' . $message ) . $debug_args . $end;
+	echo $start . esc_html( '[' . $method . '] ' . $message ) . $debug_args . $end; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 
 /**
@@ -126,7 +162,9 @@ function pods_alternative_cache_test_anon() {
 		return;
 	}
 
-	if ( ! empty( $_GET['altcache_debug_clear'] ) ) {
+	// @phpstan-ignore-next-line
+	if ( 1 === (int) pods_v( 'altcache_debug_clear' ) ) {
+		// @phpstan-ignore-next-line
 		pods_api()->cache_flush_pods();
 
 		pods_alternative_cache_log_message( 'Flushed cache', __FUNCTION__ );
@@ -145,8 +183,10 @@ function pods_alternative_cache_test_anon() {
 
 	$persist_check = '';
 
-	if ( ! empty( $_GET['altcache_debug_check'] ) ) {
-		$persist_check = sanitize_text_field( $_GET['altcache_debug_check'] );
+	// @phpstan-ignore-next-line
+	if ( null !== pods_v( 'altcache_debug_check' ) ) {
+		// @phpstan-ignore-next-line
+		$persist_check = sanitize_text_field( pods_v( 'altcache_debug_check' ) );
 	}
 
 	$cache_key         = 'pods-alt-cache-test';
@@ -264,21 +304,27 @@ function pods_alternative_cache_test_anon() {
 			}
 
 			if ( 'pods-alt-cache' === $cache_type ) {
+				// @phpstan-ignore-next-line
 				$before_set = pods_cache_get( $key, $cache_group );
 
 				if ( $value ) {
+					// @phpstan-ignore-next-line
 					$set = pods_cache_set( $key, $value, $cache_group, $expiration );
 				}
 			} elseif ( 'pods-alt-cache-transient' === $cache_type ) {
+				// @phpstan-ignore-next-line
 				$before_set = pods_transient_get( $key );
 
 				if ( $value ) {
+					// @phpstan-ignore-next-line
 					$set = pods_transient_set( $key, $value, $expiration );
 				}
 			} elseif ( 'pods-alt-cache-option' === $cache_type ) {
+				// @phpstan-ignore-next-line
 				$before_set = pods_option_cache_get( $key, $cache_group );
 
 				if ( $value ) {
+					// @phpstan-ignore-next-line
 					$set = pods_option_cache_set( $key, $value, $expiration, $cache_group );
 				}
 			} elseif ( 'wp-object-cache' === $cache_type ) {
@@ -321,10 +367,13 @@ function pods_alternative_cache_test_anon() {
 			sleep( 1 );
 
 			if ( 'pods-alt-cache' === $cache_type ) {
+				// @phpstan-ignore-next-line
 				$after_set = pods_cache_get( $key, $cache_group );
 			} elseif ( 'pods-alt-cache-transient' === $cache_type ) {
+				// @phpstan-ignore-next-line
 				$after_set = pods_transient_get( $key );
 			} elseif ( 'pods-alt-cache-option' === $cache_type ) {
+				// @phpstan-ignore-next-line
 				$after_set = pods_option_cache_get( $key, $cache_group );
 			} elseif ( 'wp-object-cache' === $cache_type ) {
 				$after_set = wp_cache_get( $key, $cache_group );
@@ -363,10 +412,36 @@ function pods_alternative_cache_test_anon() {
 	}
 
 	echo '<pre>';
-	var_dump( $stats );
+	var_dump( $stats ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_dump
 	echo '</pre>';
 
 	die();
 }
 
 add_action( 'init', 'pods_alternative_cache_test_anon' );
+
+
+add_filter( 'wp_plugin_check_ignore_files', static function ( $ignored_files ) {
+	$pods_dev_files = [
+		'.distignore',
+		'.gitattributes',
+		'.phpcs.compat.xml',
+		'.phpcs.xml',
+		'composer.json',
+		'phpcs.xml.dist',
+		'phpstan.neon',
+	];
+
+	return array_merge( $ignored_files, $pods_dev_files );
+} );
+
+add_filter( 'wp_plugin_check_ignore_directories', static function ( $ignored_dirs ) {
+	$pods_dev_dirs = [
+		'.git',
+		'.github',
+		'.wordpress-org',
+		'assets',
+	];
+
+	return array_merge( $ignored_dirs, $pods_dev_dirs );
+} );
