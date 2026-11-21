@@ -28,7 +28,13 @@ add_action( 'after_setup_theme', 'marionetterna_setup' );
  * Enqueue scripts and styles.
  */
 function scripts() {
-  wp_enqueue_style( 'marionetterna-style', get_template_directory_uri().'/inc/css/style.css' );
+  $style_path = get_template_directory() . '/inc/css/style.css';
+  $style_version = file_exists( $style_path ) ? filemtime( $style_path ) : null;
+  wp_enqueue_style( 'marionetterna-style', get_template_directory_uri().'/inc/css/style.css', array(), $style_version );
+
+  $header_path = get_template_directory() . '/inc/css/header.css';
+  $header_version = file_exists( $header_path ) ? filemtime( $header_path ) : null;
+  wp_enqueue_style( 'marionetterna-header', get_template_directory_uri() . '/inc/css/header.css', array( 'marionetterna-style' ), $header_version );
 
   wp_enqueue_script( 'marionetterna-main', get_template_directory_uri() . '/inc/js/main.js', array('jquery'), '1.5.4', true );
 }
