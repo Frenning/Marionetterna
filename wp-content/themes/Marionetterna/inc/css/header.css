@@ -40,6 +40,11 @@
   position: absolute;
 }
  
+.navbar-default > .container {
+  height: 100%;
+  position: relative;
+}
+
 .navbar-collapse {
   display: block !important;
   height: auto !important;
@@ -50,13 +55,36 @@
 .navbar-dropdown-menus {
   float: right;
   display: flex;
+  position: absolute;
+  top: 7px;
+  /* Match the centered content column's edges. */
+  left: calc(50% - 25vw + 3.75px);
+  right: calc(50% - 25vw + 3.75px);
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   font-size: 16px;
   box-sizing: border-box;
 }
  
+@media (min-width: 993px) {
+  .navbar-header {
+    left: calc(50% - 25vw + 3.75px);
+    width: min(170px, calc(50vw - 594.36px));
+  }
+
+  .navbar-header #logo,
+  .navbar-header #logo .navbar-brand {
+    width: 100%;
+  }
+
+  .navbar-header .logo {
+    width: calc(100% - 16px);
+    max-width: none;
+  }
+}
+
 .navbar-dropdown-menus > li {
+  border-bottom: 3px solid transparent;
   transition: background-color 0.15s, border-color 0.15s;
 }
 
@@ -81,7 +109,6 @@
 
 .current-menu-parent {
   border-bottom: 3px solid rgba(218, 165, 32, 0.6);
-  background-color: rgba(225, 165, 32, 0.7);
 }
 
 .current-menu-parent > a {
@@ -97,9 +124,18 @@
 .navbar-dropdown-menus > li > a {
   position: relative;
   display: block;
+  color: #f6cf75;
   font-size: 16px;
-  line-height: 30px;
-  padding: 22px 15px;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  line-height: 26px;
+  padding: 20px 7px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.navbar-dropdown-menus .dropdown-menu a {
+  color: #f6cf75;
 }
  
  
@@ -137,9 +173,9 @@
    4. Mobile Styling (max-width: 1200px)
    ========================================================================== */
  
-@media (max-width: 1200px) {
+@media (max-width: 1399px) {
   .navbar-dropdown-menus > li > a {
-    font-size: 16px;
+    font-size: 14px;
   }
  
   .navbar > .container .navbar-brand {
@@ -147,6 +183,24 @@
   }
 }
  
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .navbar-header {
+    width: min(90px, calc(50vw - 507.2px));
+  }
+}
+
+@media (min-width: 993px) and (max-width: 1199px) {
+  .navbar-dropdown-menus {
+    left: calc(50% - 29.1667vw + 4.375px);
+    right: calc(50% - 29.1667vw + 4.375px);
+  }
+
+  .navbar-header {
+    left: calc(50% - 29.1667vw + 4.375px);
+    width: min(90px, calc(58.3333vw - 508.45px));
+  }
+}
+
  
 /* ==========================================================================
    5. Mobile Styling (max-width: 992px)
@@ -198,6 +252,10 @@
     height: 100vh !important;
     margin: 0;
     padding: 0;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
     background: rgba(34, 34, 34, 0.9);
     -webkit-transform: translateY(-100%);
     transform: translateY(-100%);
@@ -213,6 +271,9 @@
  
   #navbar #menu-header-menu {
     position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
     display: flex;
     align-items: center;
     -webkit-box-align: center;
@@ -240,6 +301,17 @@
   #navbar #menu-header-menu li:first-child {
     border-top: 0;
     border-bottom: 0;
+  }
+
+  #navbar #menu-header-menu li.active,
+  #navbar #menu-header-menu li.current-menu-parent {
+    background-color: #daa520;
+    border-radius: 4px;
+  }
+
+  #navbar #menu-header-menu li.active > a,
+  #navbar #menu-header-menu li.current-menu-parent > a {
+    color: #1f1f1f;
   }
  
   #navbar #menu-header-menu li ul {
