@@ -21,7 +21,6 @@
    ========================================================================== */
 
 @import url("hamburgers.css");
-@import url("header.css");
 
 @font-face {
   font-family: customFont;
@@ -35,16 +34,15 @@
 
 body {
   font-family: customFont;
-  font-size: 14px !important;
+  font-size: 16px !important;
   line-height: 1.7;
   word-wrap: normal;
   padding: 0 !important;
   margin: 0 !important;
-  overflow-x: scroll;
+  overflow-x: hidden;
 }
 
 button {
-  background-color: #000e;
   border-radius: 10px;
 }
 
@@ -78,9 +76,21 @@ h4, h5, h6 {
 
 h1, .h1 {
   font-size: 42px;
-  padding: 10px 0;
-  border-bottom: 1px solid black;
+  padding: 0 0 20px;
   text-align: center;
+}
+
+.page-content h1 {
+  margin: 0 auto 20px;
+  max-width: 760px;
+  border: none;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.page-content p,
+.page-content li {
+  line-height: 1.75;
 }
 
 h2, .h2 {
@@ -162,7 +172,8 @@ ul li p {
 }
 
 .background-image {
-  background-image: url("../../assets/images/marionetterna1-blur.jpeg");
+  background-image: linear-gradient(rgba(247, 245, 240, 0.72), rgba(247, 245, 240, 0.72)),
+    url("../../assets/images/marionetterna1-blur.jpeg");
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
@@ -171,16 +182,18 @@ ul li p {
 .page-content {
   display: table;
   height: fit-content;
-  min-height: 1020px;
-  margin: 25px auto;
-  padding: 25px 10px;
+  min-height: 0;
+  margin: 40px auto 60px;
+  padding: 48px 40px;
   clear: both;
   background-color: #fff;
-  border-radius: 25px;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
 }
 
 .content-area {
-  margin: auto 40px;
+  max-width: 760px;
+  margin: auto;
 }
 
 .img-leaders {
@@ -346,6 +359,34 @@ ul li p {
   }
 
   .content-area {
-    margin: auto 10px;
+    margin: auto;
+  }
+
+  .page-content {
+    margin: 24px auto 40px;
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  body {
+    font-size: 16px !important;
+  }
+
+  .page-content {
+    width: calc(100% - 24px);
+    max-width: none;
+    margin: 12px auto 24px;
+    padding: 28px 18px;
+    border-radius: 8px;
+  }
+
+  .page-content h1 {
+    font-size: 32px;
+    padding-bottom: 12px;
+  }
+
+  .content-area {
+    margin: 0;
   }
 }
